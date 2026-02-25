@@ -54,7 +54,7 @@ VisionExtract/
 │   ├── annotations/
 │
 ├── notebooks/
-│   ├── mask_visualization.ipynb
+│   ├── VisionExtract_Supervisely.ipynb
 │
 ├── outputs/
 │
