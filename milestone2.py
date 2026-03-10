@@ -1,6 +1,3 @@
-
-
-
 pip install numpy pandas matplotlib opencv-python pillow torch torchvision pycocotools
 import os
 import numpy as np
