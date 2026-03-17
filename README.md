@@ -151,7 +151,115 @@ Original Image → Mask → Isolated Subject
 * E-commerce
 
 ---
+# VisionExtract – Milestone 2 Notes
 
+## Objective
+The goal of Milestone 2 is to implement and train a deep learning segmentation model that can identify and isolate the main subject in an image.
+
+---
+
+## Model Architecture
+
+The model used is **U-Net with a ResNet34 encoder**.
+
+Why U-Net?
+
+- Designed for image segmentation
+- Works well with limited datasets
+- Captures both spatial and contextual features
+
+Encoder: ResNet34 (pretrained on ImageNet)
+
+Input:
+RGB images (3 channels)
+
+Output:
+Binary mask (subject vs background)
+
+---
+
+## Loss Functions
+
+Two loss functions are used:
+
+### Binary Cross Entropy Loss
+Measures pixel-wise difference between predicted mask and ground truth mask.
+
+### Dice Loss
+Measures overlap between predicted segmentation and actual mask.
+
+Combining both losses improves segmentation accuracy.
+
+---
+
+## Training Process
+
+Training is performed for **5 epochs**.
+
+Steps during training:
+
+1. Load image and mask batch
+2. Pass images through U-Net
+3. Generate predicted masks
+4. Calculate loss
+5. Perform backpropagation
+6. Update model weights
+
+---
+
+## Evaluation Metric
+
+The model is evaluated using **Intersection over Union (IoU)**.
+
+Formula:
+
+IoU = Intersection / Union
+
+Where:
+
+Intersection = overlap between predicted and actual mask
+
+Union = total combined area of predicted and actual mask
+
+Higher IoU indicates better segmentation accuracy.
+
+---
+
+## Validation
+
+After each epoch:
+
+- The model is switched to evaluation mode
+- Validation images are passed through the model
+- IoU score is calculated
+- Performance metrics are recorded
+
+---
+
+## Output
+
+The model generates:
+
+- Predicted segmentation mask
+- Isolated subject image
+
+The output demonstrates the model’s ability to separate subject pixels from the background.
+
+## Model Training
+
+This stage focuses on implementing and training a U-Net based segmentation model.
+
+Steps:
+
+1. Load training and validation datasets
+2. Build U-Net with ResNet34 encoder
+3. Train model using BCE + Dice loss
+4. Evaluate using IoU metric
+5. Visualize predicted masks
+
+The model learns to generate binary segmentation masks that isolate the subject from the background.
+
+---
 ## Author
 
 Dudala Mohana Naga Venkata Sri Lasya
