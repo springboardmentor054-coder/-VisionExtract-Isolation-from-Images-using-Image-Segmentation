@@ -1,74 +1,86 @@
 import torch
 import torch.nn as nn
 
-## Double Convolution Block
+
 class DoubleConv(nn.Module):
+
     def __init__(self, in_channels, out_channels):
-        super(DoubleConv, self).__init__()
+        super().__init__()
 
         self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, out_channels, 3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(out_channels, out_channels, 3, padding=1),
             nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
         return self.conv(x)
 
-## Down Block
-class Down(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(Down, self).__init__()
 
-        self.down = nn.Sequential(
-            nn.MaxPool2d(2),
-            DoubleConv(in_channels, out_channels)
-        )
-
-    def forward(self, x):
-        return self.down(x)
-
-## Up Block
-class Up(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(Up, self).__init__()
-
-        self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
-        self.conv = DoubleConv(in_channels, out_channels)
-
-    def forward(self, x1, x2):
-        x1 = self.up(x1)
-
-        # Concatenate skip connection
-        x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
-
-## Final UNet Model
 class UNet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=1):
-        super(UNet, self).__init__()
 
-        self.inc = DoubleConv(n_channels, 64)
-        self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
-        self.down3 = Down(256, 512)
+    def __init__(self):
+        super().__init__()
 
-        self.up1 = Up(512, 256)
-        self.up2 = Up(256, 128)
-        self.up3 = Up(128, 64)
+        self.down1 = DoubleConv(3, 64)
+        self.pool1 = nn.MaxPool2d(2)
 
-        self.outc = nn.Conv2d(64, n_classes, kernel_size=1)
+        self.down2 = DoubleConv(64, 128)
+        self.pool2 = nn.MaxPool2d(2)
+
+        self.down3 = DoubleConv(128, 256)
+        self.pool3 = nn.MaxPool2d(2)
+
+        self.down4 = DoubleConv(256, 512)
+        self.pool4 = nn.MaxPool2d(2)
+
+        self.bottleneck = DoubleConv(512, 1024)
+
+        self.up4 = nn.ConvTranspose2d(1024, 512, 2, stride=2)
+        self.conv4 = DoubleConv(1024, 512)
+
+        self.up3 = nn.ConvTranspose2d(512, 256, 2, stride=2)
+        self.conv3 = DoubleConv(512, 256)
+
+        self.up2 = nn.ConvTranspose2d(256, 128, 2, stride=2)
+        self.conv2 = DoubleConv(256, 128)
+
+        self.up1 = nn.ConvTranspose2d(128, 64, 2, stride=2)
+        self.conv1 = DoubleConv(128, 64)
+
+        self.final = nn.Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x):
-        x1 = self.inc(x)      # 256
-        x2 = self.down1(x1)   # 128
-        x3 = self.down2(x2)   # 64
-        x4 = self.down3(x3)   # 32
 
-        x = self.up1(x4, x3)
-        x = self.up2(x, x2)
-        x = self.up3(x, x1)
+        d1 = self.down1(x)
+        p1 = self.pool1(d1)
 
-        logits = self.outc(x)
-        return logits
+        d2 = self.down2(p1)
+        p2 = self.pool2(d2)
+
+        d3 = self.down3(p2)
+        p3 = self.pool3(d3)
+
+        d4 = self.down4(p3)
+        p4 = self.pool4(d4)
+
+        bottleneck = self.bottleneck(p4)
+
+        up4 = self.up4(bottleneck)
+        up4 = torch.cat([up4, d4], dim=1)
+        up4 = self.conv4(up4)
+
+        up3 = self.up3(up4)
+        up3 = torch.cat([up3, d3], dim=1)
+        up3 = self.conv3(up3)
+
+        up2 = self.up2(up3)
+        up2 = torch.cat([up2, d2], dim=1)
+        up2 = self.conv2(up2)
+
+        up1 = self.up1(up2)
+        up1 = torch.cat([up1, d1], dim=1)
+        up1 = self.conv1(up1)
+
+        return self.final(up1)
