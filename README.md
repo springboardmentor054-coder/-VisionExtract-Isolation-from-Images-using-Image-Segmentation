@@ -1,6 +1,8 @@
 # VisionExtract: Subject Isolation using Image Segmentation
 
-![VisionExtract Banner](https://img.shields.io/badge/Python-3.10-blue.svg) ![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B-orange.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![VisionExtract Banner](docs/images/banner.png)
+
+![Python](https://img.shields.io/badge/Python-3.10-blue.svg) ![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B-orange.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
 **VisionExtract** is a high-performance subject isolation tool powered by deep learning. It leverages a customized **U-Net architecture** to perform precise semantic segmentation, extracting the main subject from complex backgrounds with pixel-perfect accuracy.
 
