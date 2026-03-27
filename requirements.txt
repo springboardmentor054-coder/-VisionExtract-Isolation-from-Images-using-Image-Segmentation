@@ -23,3 +23,5 @@ torch==2.10.0
 torchvision==0.25.0
 tqdm==4.67.3
 typing_extensions==4.15.0
+albumentations==1.4.0
+opencv-python-headless
