@@ -4,6 +4,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from pycocotools.coco import COCO
+
+# Redirect PyTorch and XDG caches to E: drive
+os.environ['TORCH_HOME'] = r'E:\torch_cache'
+os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
 import sys
 
 # Ensure src directory is in path

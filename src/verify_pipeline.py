@@ -1,6 +1,10 @@
 import os
 import sys
 
+# Redirect PyTorch and XDG caches to E: drive
+os.environ['TORCH_HOME'] = r'E:\torch_cache'
+os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
+
 # Ensure current directory is in the path
 sys.path.append(os.path.dirname(__file__))
 

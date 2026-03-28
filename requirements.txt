@@ -25,3 +25,4 @@ tqdm==4.67.3
 typing_extensions==4.15.0
 albumentations==1.4.0
 opencv-python-headless
+streamlit==1.42.2

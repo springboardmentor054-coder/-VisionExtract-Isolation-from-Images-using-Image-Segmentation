@@ -2,6 +2,10 @@ import sys
 import os
 import time
 
+# Redirect PyTorch and XDG caches to E: drive to prevent C: drive filling up
+os.environ['TORCH_HOME'] = r'E:\torch_cache'
+os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
+
 # Ensure src directory is in path for local imports
 sys.path.append(os.path.dirname(__file__))
 
@@ -154,7 +158,12 @@ if __name__ == "__main__":
         if os.path.exists(checkpoint_dir):
             checkpoints = [f for f in os.listdir(checkpoint_dir) if f.endswith(".pth")]
             if checkpoints:
-                model_path = os.path.join(checkpoint_dir, sorted(checkpoints)[-1])
+                if "best_model.pth" in checkpoints:
+                    model_path = os.path.join(checkpoint_dir, "best_model.pth")
+                else:
+                    # Sort by epoch number to get the latest
+                    checkpoints.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]) if 'epoch' in x else 0)
+                    model_path = os.path.join(checkpoint_dir, checkpoints[-1])
             
     pipeline = VisionExtractPipeline(model_path=model_path)
     

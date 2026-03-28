@@ -10,15 +10,20 @@ from albumentations.pytorch import ToTensorV2
 class CocoSegmentationDataset(Dataset):
 
     def __init__(self, coco, image_folder,
-                 category_name='person',
+                 category_name=None,
                  transform=None):
 
         self.coco = coco
         self.image_folder = image_folder
         self.transform = transform
 
-        self.cat_ids = self.coco.getCatIds(catNms=[category_name])
-        self.img_ids = self.coco.getImgIds(catIds=self.cat_ids)
+        if category_name:
+            self.cat_ids = self.coco.getCatIds(catNms=[category_name])
+            self.img_ids = self.coco.getImgIds(catIds=self.cat_ids)
+        else:
+            # Use all categories and all images if no specific category is provided
+            self.cat_ids = self.coco.getCatIds()
+            self.img_ids = self.coco.getImgIds()
 
     def __len__(self):
         return len(self.img_ids)
@@ -33,6 +38,7 @@ class CocoSegmentationDataset(Dataset):
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+        # Fetch annotations for the image. If self.cat_ids is everything, it gets all annotations.
         ann_ids = self.coco.getAnnIds(
             imgIds=img_info['id'],
             catIds=self.cat_ids,
@@ -76,4 +82,4 @@ def get_val_transforms(image_size=256):
         A.Resize(image_size, image_size),
         A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225)),
         ToTensorV2(),
-    ])
+    ])

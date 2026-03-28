@@ -12,9 +12,9 @@
 
 - **Automated Subject Isolation**: Instantly separate foreground subjects from backgrounds.
 - **Precision Segmentation**: Deep learning-based U-Net model trained on the COCO 2017 dataset.
+- **Interactive Web UI**: Real-time subject extraction using Streamlit.
 - **Morphological Refining**: Built-in mask cleaning using advanced CV techniques (Opening/Closing) for smoother edges.
 - **Batch Processing**: Efficiently process entire directories of images in one go.
-- **Durable Pipeline**: Handles various subject types including people, animals, and objects.
 
 ---
 
@@ -65,6 +65,14 @@ To process an entire folder of images:
 ```bash
 python src/inference.py --dir path/to/images --output_dir results/
 ```
+
+### 🌐 Web Application (UI)
+
+For a more user-friendly experience, you can use the Streamlit interface:
+```bash
+streamlit run src/app.py
+```
+This allows you to upload images and download results directly from your browser.
 
 **Common Flags:**
 - `--image`: Path to a single image file.
@@ -127,4 +135,12 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-**Developed as part of the VisionExtract Internship Project.**
+## 👤 Author
+
+**Biswajeet Kumar**
+- [GitHub](https://github.com/biswajeet111)  <!-- Replace with your actual username -->
+- [LinkedIn](www.linkedin.com/in/biswajeet-kumar-a70043362) <!-- Replace with your actual profile -->
+
+---
+
+**Developed as part of the VisionExtract Project.**
