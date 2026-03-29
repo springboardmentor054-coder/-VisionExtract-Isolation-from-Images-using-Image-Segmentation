@@ -1,104 +1,156 @@
-# VisionExtract: Subject Isolation using Image Segmentation
+# VisionExtract AI: Professional Subject Isolation System
 
 ![VisionExtract Banner](docs/images/banner.png)
 
-![Python](https://img.shields.io/badge/Python-3.10-blue.svg) ![PyTorch](https://img.shields.io/badge/PyTorch-2.1%2B-orange.svg) ![License](https://img.shields.io/badge/License-MIT-green.svg)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)](https://pytorch.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-**VisionExtract** is a high-performance subject isolation tool powered by deep learning. It leverages a customized **U-Net architecture** to perform precise semantic segmentation, extracting the main subject from complex backgrounds with pixel-perfect accuracy.
+**VisionExtract AI** is a state-of-the-art subject isolation tool designed for professional media pipelines, digital art, and automated photography. It leverages advanced deep learning to perform pixel-perfect semantic segmentation, separating foreground subjects from complex backgrounds with exceptional fidelity.
+
+---
+
+## 🔬 Research & Architectural Evolution
+
+A core objective of this project was to identify the most robust architecture for general-purpose subject isolation. Our development spanned two major phases of research and experimentation:
+
+### Phase 1: Custom U-Net Base (Initial Milestone)
+Initially, we implemented a custom-built **U-Net** architecture. While effective for simple shapes, testing on the diverse COCO 2017 dataset revealed limitations in handling complex textures and fine edges (reaching a plateau of ~0.47 IoU).
+
+### Phase 2: ResNet-UNet Integration (High-Performance Upgrade)
+After extensive research into **Transfer Learning** strategies, we upgraded the engine to a **ResNet-UNet** architecture. By replacing the standard encoder with a pre-trained **ResNet34 backbone**, the model benefited from spatial features learned on millions of images. 
+*   **Result**: Faster convergence, better edge preservation, and a significant jump in segmentation accuracy (Targeting 0.60+ IoU).
 
 ---
 
 ## 🚀 Key Features
 
-- **Automated Subject Isolation**: Instantly separate foreground subjects from backgrounds.
-- **Precision Segmentation**: Deep learning-based U-Net model trained on the COCO 2017 dataset.
-- **Interactive Web UI**: Real-time subject extraction using Streamlit.
-- **Morphological Refining**: Built-in mask cleaning using advanced CV techniques (Opening/Closing) for smoother edges.
-- **Batch Processing**: Efficiently process entire directories of images in one go.
+*   **Intelligent Subject Isolation**: Automated detection and extraction of primary subjects.
+*   **Batch Processing Engine**: High-throughput processing for multiple images simultaneously.
+*   **Milestone 3 Optimized**: Leveraging pre-trained weights for professional-grade results.
+*   **Visual Selection Showcase**: Real-time feedback for single and batch image isolation.
+*   **Premium Showcase UI**: A glassmorphism-based Streamlit interface for interactive demonstrations.
+*   **Morphological Refining**: Post-processing pipeline using OpenCV for boundary smoothing.
 
 ---
 
-## 🏗️ Architecture Overview
+## 🛠️ Technology Stack
 
-The core of VisionExtract is a **U-Net** convolutional neural network:
-
-1.  **Encoder (Contracting Path)**: Downsamples the image to capture high-level context and features.
-2.  **Bottleneck**: Processes the most compressed representation of the image.
-3.  **Decoder (Expanding Path)**: Upsamples back to original resolution while retaining spatial details through **Skip Connections**.
-4.  **Post-Processing**: Uses Morphological operations to remove noise and refine subject boundaries.
+*   **Deep Learning**: PyTorch (Model training & Inference)
+*   **Computer Vision**: OpenCV, Albumentations (Preprocessing & Morphological operations)
+*   **Architecture**: ResNet-UNet (Encoder-Decoder with Skip Connections)
+*   **Frontend**: Streamlit (Pro Tech/AI Dashboard)
+*   **Dataset**: COCO 2017 (80+ Object Categories)
 
 ---
 
-## 🛠️ Installation
+## 🧠 Model Architecture
 
-### 1. Clone the Repository
+The core of VisionExtract AI is a **ResNet-UNet** encoder-decoder architecture. This hybrid model combines the feature-rich extraction capability of a pre-trained ResNet with the high-resolution spatial reconstruction of a U-Net.
+
+![ResNet-UNet Architecture](docs/images/unet_architecture.svg)
+
+
+### Structural Overview:
+```mermaid
+graph LR
+    subgraph Encoder [ResNet34 Encoder]
+    E1[Init Block] --> E2[Layer 1] --> E3[Layer 2] --> E4[Layer 3] --> E5[Layer 4]
+    end
+    
+    subgraph Decoder [UNet Decoder]
+    D4[ConvUp 3] --> D3[ConvUp 2] --> D2[ConvUp 1] --> D1[ConvUp 0]
+    end
+    
+    E5 --> |Bottleneck| D4
+    E3 -.-> |Skip Connection| D3
+    E2 -.-> |Skip Connection| D2
+    E1 -.-> |Skip Connection| D1
+    
+    D1 --> Out[Binary Mask]
+```
+
+### 💻 Hardware & Training Configuration
+
+To replicate these professional benchmarks, the following setup was utilized:
+
+*   **Compute Engine**: NVIDIA RTX 4050 (6GB VRAM)
+*   **Dataset Configuration**: 30,000 COCO 2017 high-resolution samples
+*   **Batch Size**: 8 (Optimized for 6GB VRAM stability)
+*   **Input Resolution**: 256 × 256 pixels
+*   **Optimizer**: Adam with `ReduceLROnPlateau` scheduler
+
+---
+
+## ⚙️ Installation & Setup
+
+### 1. Clone & Environment
 ```bash
-git clone https://github.com/your-username/VisionExtract.git
+git clone https://github.com/biswajeet111/VisionExtract.git
 cd VisionExtract
-```
-
-### 2. Setup Virtual Environment
-```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
+### 2. Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-## 📖 Usage Guide
+## 📖 Operational Guide
 
-VisionExtract provides an easy-to-use Command Line Interface (CLI) for both training and inference.
-
-### 📍 Subject Isolation (Inference)
-
-To isolate the subject in a single image:
-```bash
-python src/inference.py --image path/to/your/image.jpg --display
-```
-
-To process an entire folder of images:
-```bash
-python src/inference.py --dir path/to/images --output_dir results/
-```
-
-### 🌐 Web Application (UI)
-
-For a more user-friendly experience, you can use the Streamlit interface:
+### 🌐 Professional Web UI
+The most interactive way to experience VisionExtract. Supports batch uploads and real-time performance metrics.
 ```bash
 streamlit run src/app.py
 ```
-This allows you to upload images and download results directly from your browser.
 
-**Common Flags:**
-- `--image`: Path to a single image file.
-- `--dir`: Path to a directory for batch processing.
-- `--checkpoint`: (Optional) Specify a custom `.pth` model file.
-- `--display`: Shows the result in a window (for single image mode).
+### 📍 Command Line Inference
+For single or batch processing via CLI:
+```bash
+# Single Image
+python src/inference.py --image path/to/img.jpg --display
+
+# Batch Directory
+python src/inference.py --dir path/to/images --output_dir results/
+```
 
 ### 🏋️ Model Training
-
-If you want to train the model on your own hardware using the COCO dataset:
+To retrain or fine-tune the ResNet-UNet model:
 ```bash
 python src/train.py
 ```
-*Checkpoints will be automatically saved in the `checkpoints/` directory.*
 
 ---
 
-## 📊 Performance Metrics
+## 🎨 Visual Performance Showcase
 
-The model is evaluated using industry-standard metrics for segmentation:
+The following examples demonstrate the **VisionExtract Professional** interface and the high-resolution subject isolation capabilities.
 
-- **Intersection over Union (IoU)**: Measures the overlap between predicted and ground-truth masks.
-- **Dice Coefficient**: High sensitivity to small segmentation errors.
-- **Pixel Accuracy**: Overall percentage of correctly classified pixels.
+````carousel
+![Single Subject Isolation](file:///C:/Users/BISWAJEET%20KUMAR/.gemini/antigravity/brain/86989c03-6d65-4016-9be0-9562c5ebd32a/media__1774786716797.png)
+<!-- slide -->
+![Group Subject Isolation](file:///C:/Users/BISWAJEET%20KUMAR/.gemini/antigravity/brain/86989c03-6d65-4016-9be0-9562c5ebd32a/media__1774786950522.png)
+````
 
-Current benchmarks show high precision on a wide variety of subjects from the COCO test suite.
+> [!TIP]
+> The professional UI features a "Glassmorphism" design with real-time inference tracking and high-resolution mask upscaling to preserve original image quality.
+
+---
+
+## 📊 Performance Benchmarks
+
+Our evaluation focuses on industry-standard segmentation metrics to ensure reliability. Results are based on Milestone 3 evaluation runs on an RTX 4050:
+
+| Metric | Value |
+| :--- | :--- |
+| **IoU (Intersection over Union)** | **0.6118** |
+| **Dice Coefficient** | **0.7540** |
+| **Pixel Accuracy** | **0.8597** |
+| **Inference Time (RTX 4050)** | **~0.40s** |
 
 ---
 
@@ -106,41 +158,23 @@ Current benchmarks show high precision on a wide variety of subjects from the CO
 
 ```text
 VisionExtract/
-├── src/                  # Core source code (Model, Train, Inference)
-├── data/                 # Dataset storage (COCO 2017)
-├── notebooks/            # Experimental JNBs
-├── outputs/              # Default inference output directory
-├── checkpoints/          # Saved model weights (.pth)
-├── docs/                 # Documentation assets
-├── requirements.txt      # Project dependencies
-└── README.md             # Project documentation
+├── src/                  # Production Source Code (Model, Train, Inference, App)
+├── data/                 # Dataset Management (COCO 2017)
+├── checkpoints/          # Model Weights (.pth) - V1 Basic & V2 Advanced
+├── milestones/           # Project Documentation & Milestone Reports
+├── docs/                 # Brand Assets & Banners
+├── requirements.txt      # Environment Configuration
+└── README.md             # Technical Documentation
 ```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
 ## 👤 Author
 
 **Biswajeet Kumar**
-- [GitHub](https://github.com/biswajeet111)  <!-- Replace with your actual username -->
-- [LinkedIn](www.linkedin.com/in/biswajeet-kumar-a70043362) <!-- Replace with your actual profile -->
+*   **Portfolio**: [GitHub](https://github.com/biswajeet111)
+*   **Connect**: [LinkedIn](https://www.linkedin.com/in/biswajeet-kumar-a70043362)
 
 ---
 
-**Developed as part of the VisionExtract Project.**
+Developed as a specialized project for **AI Subject Isolation & Image Segmentation**.

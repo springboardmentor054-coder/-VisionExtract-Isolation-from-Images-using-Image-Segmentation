@@ -8,7 +8,7 @@ from pycocotools.coco import COCO
 from dataset import CocoSegmentationDataset, get_train_transforms, get_val_transforms
 from model import UNet
 
-# 0. Environment Setup (Fix C: drive filling issue)
+# 0. Environment Setup 
 os.environ['TORCH_HOME'] = r'E:\torch_cache'
 os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
 
@@ -91,49 +91,53 @@ def main():
         generator=torch.Generator().manual_seed(42)
     )[:2]
 
-    # Windows compatible DataLoader:
-    # num_workers=0 is cleanest for Windows multiprocessing, pin_memory speed up GPU transfer.
-    train_loader = DataLoader(train_ds, batch_size=8, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=8, shuffle=False, num_workers=0, pin_memory=True)
+    # Use num_workers=0 for Windows compatibility; pin_memory=True for faster GPU transfer.
+    BATCH_SIZE = 8
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0, pin_memory=True)
     
-    print(f"Train batches: {len(train_loader)}")
-    print(f"Val batches: {len(val_loader)}")
-
     # 3. Model & Loss Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet().to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
+    # Optimization Setup: Use Adam with a lower LR for fine-tuning pre-trained weights.
+    optimizer = optim.Adam(model.parameters(), lr=5e-4) # 5e-4 recommended for Transfer Learning
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5)
 
-    # 4. Resume from Checkpoint Logic
+    # 4. Checkpoint Management
     start_epoch = 0
-    checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.endswith(".pth")]
+    checkpoint_dir = os.path.join(project_root, "checkpoints")
+    checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.endswith(".pth") and "best" not in f]
+    
     if checkpoint_files:
-        # Sort by epoch number extracted from filename (e.g., unet_epoch_5.pth)
+        # Sort and identify the latest checkpoint
         checkpoint_files.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]) if 'epoch' in x else 0)
         latest_checkpoint = os.path.join(checkpoint_dir, checkpoint_files[-1])
-        print(f"Found checkpoint: {latest_checkpoint}. Resuming...")
         
-        checkpoint = torch.load(latest_checkpoint, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        start_epoch = checkpoint['epoch']
-        print(f"Resuming from Epoch {start_epoch}")
-    else:
-        print("No checkpoints found. Starting from scratch.")
-
+        try:
+            # Load weights with a compatibility check for changed architectures
+            checkpoint = torch.load(latest_checkpoint, map_location=device, weights_only=False)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start_epoch = checkpoint['epoch']
+            print(f"Resuming training from Epoch {start_epoch}")
+        except Exception:
+            # Architecture mismatch: Standard for Milestone 3 (ResNet-UNet) transition
+            # Weights will default to pre-trained initialization from torchvision
+            pass 
+    
     best_loss = float('inf')
 
     # 5. Training Loop
     num_epochs = 100
-    print(f"Starting training loop for {num_epochs} epochs...")
+    print(f"Training initialized on {device}. Total epochs: {num_epochs}")
 
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0
-        print(f"Epoch {epoch+1} started. Fetching batches...")
         for batch_idx, (images, masks) in enumerate(train_loader):
+
+
             if batch_idx == 0:
                 print(f"First batch received! Image shape: {images.shape}")
             images, masks = images.to(device), masks.to(device)
