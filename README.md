@@ -135,8 +135,7 @@ The following examples demonstrate the **VisionExtract Professional** interface 
 
 | Single Subject Isolation | Group Subject Isolation |
 | :---: | :---: |
-| ![Single 1](outputs/Single1.png) | ![Group 1](outputs/Group1.png) |
-| ![Single 2](outputs/Single2.png) | ![Group 2](outputs/Group2.png) |
+| ![Single 1](outputs/Single.png) | ![Group 1](outputs/Group.png) |
 </div>
 
 > [!TIP]
