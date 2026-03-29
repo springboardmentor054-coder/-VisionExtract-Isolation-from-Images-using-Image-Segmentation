@@ -133,20 +133,10 @@ The following examples demonstrate the **VisionExtract Professional** interface 
 <div align="center">
   <h3>Visual Performance Showcase</h3>
 
-  <table>
-    <tr>
-      <td align="center"><b>Single Subject Isolation</b></td>
-      <td align="center"><b>Group Subject Isolation</b></td>
-    </tr>
-    <tr>
-      <td><img src="outputs/Single1.png" width="400"></td>
-      <td><img src="outputs/Group1.png" width="400"></td>
-    </tr>
-    <tr>
-      <td><img src="outputs/Single2.png" width="400"></td>
-      <td><img src="outputs/Group2.png" width="400"></td>
-    </tr>
-  </table>
+| Single Subject Isolation | Group Subject Isolation |
+| :---: | :---: |
+| ![Single 1](outputs/Single1.png) | ![Group 1](outputs/Group1.png) |
+| ![Single 2](outputs/Single2.png) | ![Group 2](outputs/Group2.png) |
 </div>
 
 > [!TIP]
