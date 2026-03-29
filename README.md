@@ -130,11 +130,20 @@ python src/train.py
 
 The following examples demonstrate the **VisionExtract Professional** interface and the high-resolution subject isolation capabilities.
 
-````carousel
-![Single Subject Isolation](docs/images/Screenshot%202026-03-29%20165931.png)
-<!-- slide -->
-![Group Subject Isolation](docs/images/Screenshot%202026-03-29%20180242.png)
-````
+<div align="center">
+  <h3>Visual Performance Showcase</h3>
+
+  <table>
+    <tr>
+      <td align="center"><b>Single Subject Isolation</b></td>
+      <td align="center"><b>Group Subject Isolation</b></td>
+    </tr>
+    <tr>
+      <td><img src="docs/images/Screenshot%202026-03-29%20165931.png" width="400"></td>
+      <td><img src="docs/images/Screenshot%202026-03-29%20180242.png" width="400"></td>
+    </tr>
+  </table>
+</div>
 
 > [!TIP]
 > The professional UI features a "Glassmorphism" design with real-time inference tracking and high-resolution mask upscaling to preserve original image quality.
