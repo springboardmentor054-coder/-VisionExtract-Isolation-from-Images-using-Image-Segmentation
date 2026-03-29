@@ -131,9 +131,9 @@ python src/train.py
 The following examples demonstrate the **VisionExtract Professional** interface and the high-resolution subject isolation capabilities.
 
 ````carousel
-![Single Subject Isolation](file:///C:/Users/BISWAJEET%20KUMAR/.gemini/antigravity/brain/86989c03-6d65-4016-9be0-9562c5ebd32a/media__1774786716797.png)
+![Single Subject Isolation](docs/images/Screenshot%202026-03-29%20165931.png)
 <!-- slide -->
-![Group Subject Isolation](file:///C:/Users/BISWAJEET%20KUMAR/.gemini/antigravity/brain/86989c03-6d65-4016-9be0-9562c5ebd32a/media__1774786950522.png)
+![Group Subject Isolation](docs/images/Screenshot%202026-03-29%20180242.png)
 ````
 
 > [!TIP]
