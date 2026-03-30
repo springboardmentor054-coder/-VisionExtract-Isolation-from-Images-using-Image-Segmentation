@@ -3,5 +3,4 @@ __pycache__/
 *.pyc
 data/
 checkpoints/
-outputs/
 logs/
