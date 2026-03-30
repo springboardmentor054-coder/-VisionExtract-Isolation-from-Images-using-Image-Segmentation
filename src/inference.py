@@ -87,15 +87,8 @@ class VisionExtractPipeline:
         cleaned_mask = self.clean_mask(mask)
 
         # Isolate Subject
-        # Capture original dimensions
-        h, w = image.shape[:2]
-        
-        # Upscale the mask back to the original image's dimensions for high-resolution output
-        # Use INTER_LINEAR for smooth mask edges at full scale
-        upscaled_mask = cv2.resize(cleaned_mask, (w, h), interpolation=cv2.INTER_LINEAR)
-        
-        # Apply the full-resolution mask to the original image
-        isolated = (image * upscaled_mask[:, :, None]).astype(np.uint8)
+        resized_original = cv2.resize(image, (256, 256))
+        isolated = (resized_original * cleaned_mask[:, :, None]).astype(np.uint8)
 
         # Save Output
         if save:
@@ -112,16 +105,15 @@ class VisionExtractPipeline:
             logger.info(f"Output saved: {output_path}")
 
         if display:
-            plt.figure(figsize=(12, 6))
+            plt.figure(figsize=(10, 5))
             plt.subplot(1, 2, 1)
-            plt.imshow(image)
-            plt.title(f"Original ({w}x{h})")
+            plt.imshow(resized_original)
+            plt.title("Original (Resized)")
             plt.axis("off")
             plt.subplot(1, 2, 2)
             plt.imshow(isolated)
-            plt.title(f"Isolated Subject ({w}x{h})")
+            plt.title("Isolated Subject")
             plt.axis("off")
-            plt.tight_layout()
             plt.show()
 
         return isolated
