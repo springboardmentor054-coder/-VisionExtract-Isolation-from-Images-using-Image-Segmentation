@@ -106,32 +106,14 @@ Current benchmarks show high precision on a wide variety of subjects from the CO
 
 ```text
 VisionExtract/
-├── src/                  # Core source code (Model, Train, Inference)
-├── data/                 # Dataset storage (COCO 2017)
-├── notebooks/            # Experimental JNBs
-├── outputs/              # Default inference output directory
-├── checkpoints/          # Saved model weights (.pth)
-├── docs/                 # Documentation assets
-├── requirements.txt      # Project dependencies
-└── README.md             # Project documentation
+├── src/                  # Production Source Code (Model, Train, Inference, App)
+├── data/                 # Dataset Management (COCO 2017)
+├── checkpoints/          # Model Weights (.pth)
+├── milestones/           # Project Documentation & Milestone Reports
+├── docs/                 # Brand Assets & Banners
+├── requirements.txt      # Environment Configuration
+└── README.md             # Technical Documentation
 ```
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
