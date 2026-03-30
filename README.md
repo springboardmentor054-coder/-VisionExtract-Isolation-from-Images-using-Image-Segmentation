@@ -162,7 +162,7 @@ Our evaluation focuses on industry-standard segmentation metrics to ensure relia
 VisionExtract/
 ├── src/                  # Production Source Code (Model, Train, Inference, App)
 ├── data/                 # Dataset Management (COCO 2017)
-├── checkpoints/          # Model Weights (.pth) - V1 Basic & V2 Advanced
+├── checkpoints/          # Model Weights (.pth)
 ├── milestones/           # Project Documentation & Milestone Reports
 ├── docs/                 # Brand Assets & Banners
 ├── requirements.txt      # Environment Configuration
