@@ -75,7 +75,7 @@ graph LR
 
 To replicate these professional benchmarks, the following setup was utilized:
 
-*   **Compute Engine**: NVIDIA RTX 4050 (6GB VRAM)
+*   **Compute Engine**: NVIDIA RTX 4050 (8GB VRAM)
 *   **Dataset Configuration**: 30,000 COCO 2017 high-resolution samples
 *   **Batch Size**: 8 (Optimized for 6GB VRAM stability)
 *   **Input Resolution**: 256 × 256 pixels
@@ -145,13 +145,15 @@ The following examples demonstrate the **VisionExtract Professional** interface 
 
 ## 📊 Performance Benchmarks
 
-Our evaluation focuses on industry-standard segmentation metrics to ensure reliability. Results are based on Milestone 3 evaluation runs on an RTX 4050:
+Our evaluation focuses on industry-standard segmentation metrics to ensure reliability. The following results characterize the **VisionExtract AI** performance after 30 epochs of training on an RTX 4050:
 
-| Metric | Value |
+| Metric | Achievement (30 Epochs) |
 | :--- | :--- |
-| **IoU (Intersection over Union)** | **0.6118** |
-| **Dice Coefficient** | **0.7540** |
-| **Pixel Accuracy** | **0.8597** |
+| **IoU (Intersection over Union)** | **0.6317** |
+| **Dice Coefficient** | **0.7692** |
+| **Pixel Accuracy** | **0.8671** |
+| **Precision** | **0.7528** |
+| **Recall** | **0.7994** |
 | **Inference Time (RTX 4050)** | **~0.40s** |
 
 ---
