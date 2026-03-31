@@ -260,6 +260,111 @@ Steps:
 The model learns to generate binary segmentation masks that isolate the subject from the background.
 
 ---
+# VisionExtract – Milestone 3: Prediction & Evaluation
+
+## 📌 Overview
+Milestone 3 focuses on generating segmentation predictions using the trained model, evaluating performance, and producing final subject-isolated outputs. This stage completes the VisionExtract pipeline from input image to final extracted subject.
+
+---
+
+## 🎯 Objective
+- Generate segmentation masks using trained U-Net model  
+- Evaluate model performance using IoU and Dice Score  
+- Visualize predictions and isolate subject from background  
+
+---
+
+## 🧠 Pipeline (Milestone 3)
+Input Image
+↓
+Trained U-Net Model
+↓
+Predicted Mask (probabilities)
+↓
+Binary Mask (threshold = 0.5)
+↓
+Mask × Image (pixel-wise)
+↓
+Isolated Subject Output
+
+---
+### Mathematical Representation
+Output(x,y) = Image(x,y) × Mask(x,y)
+Mask(x,y) ∈ {0,1}
+---
+---
+
+## ⚙️ Implementation Steps
+
+1. Load trained model and set to evaluation mode  
+2. Pass validation images through the model  
+3. Apply sigmoid to convert outputs into probabilities  
+4. Convert probabilities into binary masks using threshold (0.5)  
+5. Compute evaluation metrics (IoU and Dice Score)  
+6. Apply mask to original image to isolate subject  
+7. Visualize input, ground truth, prediction, and final output  
+
+---
+
+## 📊 Evaluation Metrics
+
+- **IoU (Intersection over Union)**  
+  Measures overlap between predicted mask and ground truth  
+
+- **Dice Score**  
+  Measures similarity between predicted and actual segmentation  
+
+Higher values indicate better segmentation performance.
+
+---
+
+## 📈 Results
+
+| Metric | Value |
+|------|------|
+| Mean IoU | ~0.75 |
+| Dice Score | ~0.82 |
+
+*(Replace with your actual results)*
+
+---
+
+## 🖼️ Output Visualization
+
+Each prediction includes:
+- Input Image  
+- Ground Truth Mask  
+- Predicted Mask  
+- Isolated Subject  
+
+These outputs confirm that the model successfully separates subject from background.
+
+---
+
+## ⚠️ Common Issues
+
+- Incorrect dataset path → FileNotFoundError  
+- Mismatch between image and mask names  
+- Not using `model.eval()` during prediction  
+
+---
+
+## 🚀 Key Outcome
+
+- Successfully generated segmentation masks  
+- Evaluated model performance quantitatively  
+- Achieved subject isolation using predicted masks  
+- Completed end-to-end VisionExtract pipeline  
+
+---
+
+## 🔮 Future Improvements
+
+- Improve accuracy with advanced models (DeepLabV3+)  
+- Optimize threshold selection  
+- Deploy real-time segmentation system  
+
+---
 ## Author
 
 Dudala Mohana Naga Venkata Sri Lasya
