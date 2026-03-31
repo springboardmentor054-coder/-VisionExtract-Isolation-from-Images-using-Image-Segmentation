@@ -104,9 +104,9 @@ python src/train.py
 
 ## 🎨 Visual Performance Showcase
 
-| Dynamic UI Controls | Detailed Hair Isolation | Group Subject Separation |
-| :---: | :---: | :---: |
-| ![UI](docs/images/ui_preview.png) | ![Hair](outputs/hair_detail.png) | ![Group](outputs/Group.png) |
+| Group Subject Separation |
+| :---: |
+| ![Group](outputs/Group.png) |
 
 > [!IMPORTANT]
 > For best results with hair and fine details, enable **"Enhanced Quality"** in the sidebar and set **"Inference Resolution"** to **512**.
