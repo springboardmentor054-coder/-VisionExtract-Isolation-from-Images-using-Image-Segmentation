@@ -75,7 +75,7 @@ graph LR
 
 To replicate these professional benchmarks, the following setup was utilized:
 
-*   **Compute Engine**: NVIDIA RTX 4050 (6GB VRAM)
+*   **Compute Engine**: NVIDIA RTX 4050 (8GB VRAM)
 *   **Dataset Configuration**: 30,000 COCO 2017 high-resolution samples
 *   **Batch Size**: 8 (Optimized for 6GB VRAM stability)
 *   **Input Resolution**: 256 × 256 pixels
