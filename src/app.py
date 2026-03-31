@@ -131,7 +131,23 @@ def main():
         options=["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"])
     
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### ### 🔬 Architecture: ResNet-UNet")
+    st.sidebar.markdown("### 💎 Quality Settings")
+    quality_mode = st.sidebar.toggle("Enchanced Quality", value=True, help="Use Guided Filter for sharper edges.")
+    
+    inf_resolution = st.sidebar.select_slider(
+        "Inference resolution", 
+        options=[256, 384, 512], 
+        value=512,
+        help="Higher resolution captures finer details but is slower."
+    )
+    
+    if quality_mode:
+        ref_intensity = st.sidebar.slider("Edge Refinement", 0.0, 1.0, 0.8, help="Controls mask sharpness.")
+    else:
+        ref_intensity = 0.0
+
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🔬 Architecture: ResNet-UNet")
     st.sidebar.caption("High-performance segmentation with pre-trained ResNet34 backbone for precise subject isolation.")
 
     # --- Header ---
@@ -152,7 +168,7 @@ def main():
         
         if process_all:
             # Initialize Pipeline Once
-            pipeline = VisionExtractPipeline(model_path=model_path, device=device)
+            pipeline = VisionExtractPipeline(model_path=model_path, device=device, image_size=inf_resolution)
             
             # Progress handling
             progress_bar = st.progress(0)
@@ -172,7 +188,14 @@ def main():
                 
                 try:
                     # Inference
-                    isolated_np = pipeline.full_pipeline(temp_path, save=False, display=False)
+                    isolated_np = pipeline.full_pipeline(
+                        temp_path, 
+                        save=False, 
+                        display=False, 
+                        refinement=quality_mode, 
+                        refinement_intensity=ref_intensity,
+                        custom_size=inf_resolution
+                    )
                     inf_time = time.time() - start_time
                     
                     # Display Result Card

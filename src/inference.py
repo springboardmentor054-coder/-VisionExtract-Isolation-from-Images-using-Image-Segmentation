@@ -34,8 +34,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class VisionExtractPipeline:
-    def __init__(self, model_path=None, device=None):
+    def __init__(self, model_path=None, device=None, image_size=256):
         self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.image_size = image_size
         self.model = UNet().to(self.device)
         
         if model_path and os.path.exists(model_path):
@@ -52,19 +53,63 @@ class VisionExtractPipeline:
             logger.warning("No model path provided or file doesn't exist. Model is uninitialized.")
             
         self.model.eval()
-        self.transforms = get_val_transforms()
+        self.transforms = get_val_transforms(image_size=self.image_size)
         self.valid_formats = (".jpg", ".png", ".jpeg")
 
-    def clean_mask(self, mask):
-        """Refine the predicted mask using morphological operations."""
-        mask_uint8 = (mask * 255).astype(np.uint8)
-        kernel = np.ones((5, 5), np.uint8)
-        cleaned = cv2.morphologyEx(mask_uint8, cv2.MORPH_OPEN, kernel)
-        cleaned = cv2.morphologyEx(cleaned, cv2.MORPH_CLOSE, kernel)
-        return cleaned.astype(float) / 255.0
+    def _guided_filter(self, guide, src, radius, eps):
+        """Standard Guided Filter implementation for edge refinement."""
+        guide = guide.astype(np.float32) / 255.0
+        src = src.astype(np.float32)
+        
+        if len(guide.shape) == 3:
+            # Handle multi-channel guide (RGB)
+            guide_gray = cv2.cvtColor((guide * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY).astype(np.float32) / 255.0
+        else:
+            guide_gray = guide
 
-    def full_pipeline(self, image_path, output_path=None, save=True, display=False):
-        """End-to-end pipeline: load, preprocess, predict, clean, isolate, save."""
+        mean_i = cv2.boxFilter(guide_gray, -1, (radius, radius))
+        mean_p = cv2.boxFilter(src, -1, (radius, radius))
+        mean_ip = cv2.boxFilter(guide_gray * src, -1, (radius, radius))
+        cov_ip = mean_ip - mean_i * mean_p
+
+        mean_ii = cv2.boxFilter(guide_gray * guide_gray, -1, (radius, radius))
+        var_i = mean_ii - mean_i * mean_i
+
+        a = cov_ip / (var_i + eps)
+        b = mean_p - a * mean_i
+
+        mean_a = cv2.boxFilter(a, -1, (radius, radius))
+        mean_b = cv2.boxFilter(b, -1, (radius, radius))
+
+        return mean_a * guide_gray + mean_b
+
+    def clean_mask(self, mask, image_guide=None, refinement_intensity=0.5):
+        """Refine the predicted mask using Guided Filter and soft thresholding."""
+        if image_guide is not None:
+            # Use Guided Filter for edge-aware smoothing
+            # radius: larger captures more context, smaller is more local
+            # eps: regularization. Smaller eps snaps harder to guide edges.
+            eps = 1e-5 + (1.0 - refinement_intensity) * 0.05
+            radius = int(4 + 12 * refinement_intensity)
+            
+            refined = self._guided_filter(image_guide, mask, radius, eps)
+            refined = np.clip(refined, 0, 1)
+            
+            # Post-refinement: Background Suppression
+            # We want to push very low probabilities to zero to avoid "halo" or "bleed"
+            # but keep the transition smooth for hair strands.
+            if refinement_intensity > 0.5:
+                # Apply a slight gamma/contrast stretch to the mask
+                refined = np.power(refined, 1.2) # push mid-tones slightly down
+                refined[refined < 0.05] = 0 # hard zero for very low probability areas
+                
+            return refined
+        else:
+            # Fallback to simple soft cleaning
+            return cv2.GaussianBlur(mask, (3, 3), 0)
+
+    def full_pipeline(self, image_path, output_path=None, save=True, display=False, refinement=True, refinement_intensity=0.8, custom_size=None):
+        """End-to-end pipeline with aspect ratio awareness and mask refinement."""
         if not image_path.lower().endswith(self.valid_formats):
             raise ValueError(f"Invalid image format: {image_path}. Supported: {self.valid_formats}")
 
@@ -72,30 +117,48 @@ class VisionExtractPipeline:
         if image is None:
             raise FileNotFoundError(f"Could not read image: {image_path}")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        h_orig, w_orig = image.shape[:2]
+        
+        # Determine image size for inference
+        target_size = custom_size if custom_size else self.image_size
+        transforms = get_val_transforms(image_size=target_size)
         
         # Preprocess
-        augmented = self.transforms(image=image)
+        augmented = transforms(image=image)
         input_tensor = augmented['image'].unsqueeze(0).to(self.device)
 
         # Prediction
         with torch.no_grad():
             output = self.model(input_tensor)
-            prediction = torch.sigmoid(output)
-            mask = (prediction > 0.5).float().squeeze().cpu().numpy()
+            # Use soft mask (probabilities) instead of binary for better upscaling
+            prediction = torch.sigmoid(output).squeeze().cpu().numpy()
 
-        # Clean Mask
-        cleaned_mask = self.clean_mask(mask)
+        # Handle Padding Adjustment: 
+        # Albumentations PadIfNeeded pads to center by default or from edges.
+        # Resize/Padding calculation to find the valid mask region
+        scale = target_size / max(h_orig, w_orig)
+        new_h, new_w = int(h_orig * scale), int(w_orig * scale)
+        pad_top = (target_size - new_h) // 2
+        pad_left = (target_size - new_w) // 2
+        
+        # Crop the valid region out of the square prediction
+        valid_mask = prediction[pad_top:pad_top+new_h, pad_left:pad_left+new_w]
 
+        # Upscale the mask back to original resolution BEFORE binarization for smooth edges
+        upscaled_mask = cv2.resize(valid_mask, (w_orig, h_orig), interpolation=cv2.INTER_LINEAR)
+        
+        if refinement:
+            upscaled_mask = self.clean_mask(upscaled_mask, image_guide=image, refinement_intensity=refinement_intensity)
+
+        # Apply threshold to the refined soft mask
+        binary_mask = (upscaled_mask > 0.5).astype(float)
+        
+        # For professional look, use a slightly feathered soft mask for isolation
+        # This reduces the "cutout" look and handles hair better
+        final_mask = upscaled_mask if refinement else binary_mask
+        
         # Isolate Subject
-        # Capture original dimensions
-        h, w = image.shape[:2]
-        
-        # Upscale the mask back to the original image's dimensions for high-resolution output
-        # Use INTER_LINEAR for smooth mask edges at full scale
-        upscaled_mask = cv2.resize(cleaned_mask, (w, h), interpolation=cv2.INTER_LINEAR)
-        
-        # Apply the full-resolution mask to the original image
-        isolated = (image * upscaled_mask[:, :, None]).astype(np.uint8)
+        isolated = (image * final_mask[:, :, None]).astype(np.uint8)
 
         # Save Output
         if save:
@@ -115,11 +178,11 @@ class VisionExtractPipeline:
             plt.figure(figsize=(12, 6))
             plt.subplot(1, 2, 1)
             plt.imshow(image)
-            plt.title(f"Original ({w}x{h})")
+            plt.title(f"Original ({w_orig}x{h_orig})")
             plt.axis("off")
             plt.subplot(1, 2, 2)
             plt.imshow(isolated)
-            plt.title(f"Isolated Subject ({w}x{h})")
+            plt.title(f"Isolated Subject ({w_orig}x{h_orig})")
             plt.axis("off")
             plt.tight_layout()
             plt.show()
@@ -155,6 +218,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, help="Specify output path for single image")
     parser.add_argument("--output_dir", type=str, default="outputs", help="Output directory for batch")
     parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint (.pth)")
+    parser.add_argument("--size", type=int, default=256, help="Inference size")
     parser.add_argument("--display", action="store_true", help="Display result")
     
     args = parser.parse_args()
@@ -173,11 +237,11 @@ if __name__ == "__main__":
                     checkpoints.sort(key=lambda x: int(x.split('_')[-1].split('.')[0]) if 'epoch' in x else 0)
                     model_path = os.path.join(checkpoint_dir, checkpoints[-1])
             
-    pipeline = VisionExtractPipeline(model_path=model_path)
+    pipeline = VisionExtractPipeline(model_path=model_path, image_size=args.size)
     
     if args.image:
         pipeline.full_pipeline(args.image, output_path=args.output, save=True, display=args.display)
     elif args.dir:
         pipeline.batch_inference(args.dir, output_dir=args.output_dir)
     else:
-        print("Usage: python src/inference.py --image <path> [--output <path>] OR --dir <path> [--output_dir <path>]")
+        print("Usage: python src/inference.py --image <path> [--output <path>] OR --dir <path> [--output_dir <path>]")
