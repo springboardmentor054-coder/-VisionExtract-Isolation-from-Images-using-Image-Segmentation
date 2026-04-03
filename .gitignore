@@ -38,4 +38,5 @@ Thumbs.db
 # =========================
 # Logs
 # =========================
-*.log
+*.log*.pth
+web-app/checkpoints/
