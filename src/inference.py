@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class VisionExtractPipeline:
     def __init__(self, model_path=None, device=None, image_size=256):
         self.device = device if device else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.image_size = image_size
+        self.image_size = 256 # Fixed to 256 for stable results
         self.model = UNet().to(self.device)
         
         if model_path and os.path.exists(model_path):
@@ -84,28 +84,31 @@ class VisionExtractPipeline:
         return mean_a * guide_gray + mean_b
 
     def clean_mask(self, mask, image_guide=None, refinement_intensity=0.5):
-        """Refine the predicted mask using Guided Filter and soft thresholding."""
+        """Refine the predicted mask using Morphological Erosion and Guided Filter."""
         if image_guide is not None:
-            # Use Guided Filter for edge-aware smoothing
-            # radius: larger captures more context, smaller is more local
-            # eps: regularization. Smaller eps snaps harder to guide edges.
-            eps = 1e-5 + (1.0 - refinement_intensity) * 0.05
-            radius = int(4 + 12 * refinement_intensity)
+            # Step 1: Halo Reduction (Morphological Erosion)
+            # Contract the mask slightly before refinement to prevent background "bleed"
+            kernel_size = int(3 + 2 * refinement_intensity)
+            if kernel_size % 2 == 0: kernel_size += 1
+            kernel = np.ones((kernel_size, kernel_size), np.uint8)
+            mask = cv2.erode(mask, kernel, iterations=1)
+
+            # Step 2: Edge-Aware Smoothing (Guided Filter)
+            # eps: regularization. Smaller eps snaps harder to guide edges. 1e-6 is ideal for hair.
+            eps = 1e-6 + (1.0 - refinement_intensity) * 0.01
+            radius = int(2 + 6 * refinement_intensity) # More local radius for sharper edges
             
             refined = self._guided_filter(image_guide, mask, radius, eps)
             refined = np.clip(refined, 0, 1)
             
-            # Post-refinement: Background Suppression
-            # We want to push very low probabilities to zero to avoid "halo" or "bleed"
-            # but keep the transition smooth for hair strands.
+            # Step 3: Post-refinement: Transparency & Background Suppression
             if refinement_intensity > 0.5:
-                # Apply a slight gamma/contrast stretch to the mask
-                refined = np.power(refined, 1.2) # push mid-tones slightly down
-                refined[refined < 0.05] = 0 # hard zero for very low probability areas
+                # Optimized gamma contrast for cleaner isolation
+                refined = np.power(refined, 1.4) 
+                refined[refined < 0.02] = 0 # Push very low probabilities to zero
                 
             return refined
         else:
-            # Fallback to simple soft cleaning
             return cv2.GaussianBlur(mask, (3, 3), 0)
 
     def full_pipeline(self, image_path, output_path=None, save=True, display=False, refinement=True, refinement_intensity=0.8, custom_size=None):
@@ -136,10 +139,11 @@ class VisionExtractPipeline:
         # Handle Padding Adjustment: 
         # Albumentations PadIfNeeded pads to center by default or from edges.
         # Resize/Padding calculation to find the valid mask region
-        scale = target_size / max(h_orig, w_orig)
+        # Handle Padding Adjustment
+        scale = 256 / max(h_orig, w_orig)
         new_h, new_w = int(h_orig * scale), int(w_orig * scale)
-        pad_top = (target_size - new_h) // 2
-        pad_left = (target_size - new_w) // 2
+        pad_top = (256 - new_h) // 2
+        pad_left = (256 - new_w) // 2
         
         # Crop the valid region out of the square prediction
         valid_mask = prediction[pad_top:pad_top+new_h, pad_left:pad_left+new_w]
@@ -153,8 +157,6 @@ class VisionExtractPipeline:
         # Apply threshold to the refined soft mask
         binary_mask = (upscaled_mask > 0.5).astype(float)
         
-        # For professional look, use a slightly feathered soft mask for isolation
-        # This reduces the "cutout" look and handles hair better
         final_mask = upscaled_mask if refinement else binary_mask
         
         # Isolate Subject
@@ -218,7 +220,6 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, help="Specify output path for single image")
     parser.add_argument("--output_dir", type=str, default="outputs", help="Output directory for batch")
     parser.add_argument("--checkpoint", type=str, default=None, help="Path to model checkpoint (.pth)")
-    parser.add_argument("--size", type=int, default=256, help="Inference size")
     parser.add_argument("--display", action="store_true", help="Display result")
     
     args = parser.parse_args()
@@ -244,4 +245,4 @@ if __name__ == "__main__":
     elif args.dir:
         pipeline.batch_inference(args.dir, output_dir=args.output_dir)
     else:
-        print("Usage: python src/inference.py --image <path> [--output <path>] OR --dir <path> [--output_dir <path>]")
+        print("Usage: python src/inference.py --image <path> [--output <path>] OR --dir <path> [--output_dir <path>]")

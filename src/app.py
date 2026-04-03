@@ -134,12 +134,7 @@ def main():
     st.sidebar.markdown("### 💎 Quality Settings")
     quality_mode = st.sidebar.toggle("Enhanced Quality", value=True, help="Use Guided Filter for sharper edges.")
     
-    inf_resolution = st.sidebar.select_slider(
-        "Inference resolution", 
-        options=[256, 384, 512], 
-        value=512,
-        help="Higher resolution captures finer details but is slower."
-    )
+    inf_resolution = 256 # Fixed resolution for stability
     
     if quality_mode:
         ref_intensity = st.sidebar.slider("Edge Refinement", 0.0, 1.0, 0.8, help="Controls mask sharpness.")
@@ -250,7 +245,7 @@ def main():
         with c_i2:
             st.markdown("### ⚡ Speed\nSub-second inference on RTX 40-series GPUs.")
         with c_i3:
-            st.markdown("### 🖼️ Quality\nEdge-aware Guided Filter refinement for professional subject isolation.")
+            st.markdown("### 🖼️ Quality\nOptimized halo-free isolation with Guided Filter refinement.")
 
 if __name__ == "__main__":
     main()

@@ -22,10 +22,10 @@ Unlike standard smoothing, our **Guided Filter** uses the original high-resoluti
 We've implemented a soft alpha-masking system with non-linear background suppression. This preserves delicate hair strands and thin objects while ensuring no background "bleed" remains visible in the final isolation.
 
 ### 3. Aspect Ratio Preservation (Padding)
-Previous versions stretched images into squares, distorting subjects (especially in group photos). The new engine uses **LongestMaxSize + PadIfNeeded** preprocessing, ensuring subjects maintain their natural proportions for significantly higher accuracy.
+Previous versions stretched images into squares, distorting subjects. The new engine uses **LongestMaxSize + PadIfNeeded** preprocessing, ensuring subjects maintain their natural proportions.
 
-### 4. High-Resolution Inference
-Support for **512 × 512** inference resolution allows the model to capture significantly more detail than standard 256px models, essential for large group photos and professional media.
+### 4. Optimized Halo-Free Engine
+We've integrated a morphological erosion step before Guided Filtering. This contracts the AI mask slightly to prevent "bleeding" into the background, ensuring razor-sharp isolation even in complex lighting.
 
 ---
 
@@ -44,8 +44,8 @@ Integrated the **Guided Filter** and **Soft Masking** pipeline. This moved the p
 
 ## 🚀 Key Features
 
-*   **⚡ Real-Time Refinement**: Toggle Guided Filter and adjust refinement intensity in real-time.
-*   **🖼️ High-Res Support**: Choose between 256px, 384px, or 512px inference resolution.
+*   **⚡ Optimized Refinement**: Advanced Guided Filter with morphological halo reduction.
+*   **🖼️ Stable Inference**: Fixed 256px resolution for maximum architectural consistency.
 *   **🧩 Group Photo Optimized**: Distortion-free processing for landscape and group shots.
 *   **📂 Batch Processing**: High-throughput engine for processing entire directories.
 *   **💎 Premium Showcase UI**: Glassmorphism-based Streamlit dashboard with real-time performance metrics.
@@ -88,8 +88,8 @@ streamlit run src/app.py
 
 ### 📍 Command Line Inference
 ```bash
-# Single Image with 512px Refinement
-python src/inference.py --image path/to/img.jpg --size 512 --display
+# Single Image Isolation
+python src/inference.py --image path/to/img.jpg --display
 
 # Batch Directory
 python src/inference.py --dir path/to/images --output_dir results/
@@ -109,7 +109,7 @@ python src/train.py
 | ![Group](outputs/Group.png) |
 
 > [!IMPORTANT]
-> For best results with hair and fine details, enable **"Enhanced Quality"** in the sidebar and set **"Inference Resolution"** to **512**.
+> For best results with fine details, enable **"Enhanced Quality"** in the sidebar. The system is optimized for **256px** stable inference.
 
 ---
 
@@ -120,7 +120,7 @@ python src/train.py
 | **IoU (Intersection over Union)** | **0.63+** |
 | **Edge Fidelity** | **Excellent (via Guided Filter)** |
 | **Processing Speed** | **Sub-second (RTX 40-series)** |
-| **VRAM Usage** | **< 6GB (Optimized)** |
+| **VRAM Usage** | **< 8GB (Optimized)** |
 
 ---
 
