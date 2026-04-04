@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import autocast, GradScaler
 from tqdm import tqdm
 from pycocotools.coco import COCO
 
@@ -16,7 +16,7 @@ os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
 
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1e-6):
+    def __init__(self, smooth=1.0):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
 
@@ -106,8 +106,8 @@ def main():
     # Optimization Setup: Use Adam with a lower LR for fine-tuning pre-trained weights.
     # Optimization Setup: Use Adam with localized LR for finer convergence.
     optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.5)
-    scaler = GradScaler() # For Mixed Precision Training
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=5, factor=0.5)
+    scaler = GradScaler('cuda') # For Mixed Precision Training
 
     # 4. Checkpoint Management
     start_epoch = 0
@@ -125,9 +125,19 @@ def main():
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             start_epoch = checkpoint['epoch']
+            
+            # Refinement Phase: Optimized for fast loss decrease in final 10 epochs.
+            # Resetting LR to 5e-5 (Half of initial) to "jolt" the model.
+            if start_epoch >= 100:
+                print(f"Applying Refinement Phase: Optimizing LR to 5e-5 for fast convergence.")
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 5e-5
+                # Reset scheduler's 'best' to ensure it doesn't decay early
+                scheduler.best = 0 if scheduler.mode == 'max' else float('inf')
+                    
             print(f"Resuming training from Epoch {start_epoch}")
-        except Exception:
-            # Architecture mismatch: Standard for Milestone 3 (ResNet-UNet) transition
+        except Exception as e:
+            print(f"Starting fresh or error loading checkpoint: {e}")
             # Weights will default to pre-trained initialization from torchvision
             pass 
     
@@ -135,7 +145,7 @@ def main():
     best_loss = float('inf')
 
     # 5. Training Loop
-    num_epochs = 100
+    num_epochs = 110
     print(f"Training initialized on {device}. Total epochs: {num_epochs}")
 
     for epoch in range(start_epoch, num_epochs):
@@ -150,7 +160,7 @@ def main():
             optimizer.zero_grad()
             
             # Using AMP for faster training
-            with autocast():
+            with torch.amp.autocast('cuda'):
                 outputs = model(images)
                 loss = combined_loss(outputs, masks)
             
@@ -176,7 +186,7 @@ def main():
             for images, masks in val_bar:
                 images, masks = images.to(device), masks.to(device)
                 
-                with autocast():
+                with torch.amp.autocast('cuda'):
                     outputs = model(images)
                     v_loss = combined_loss(outputs, masks)
                 
@@ -200,7 +210,7 @@ def main():
         v_avg_rec = total_rec / len(val_loader)
         v_avg_acc = total_acc / len(val_loader)
 
-        scheduler.step(v_avg_loss)
+        scheduler.step(v_avg_iou)
         
         print(f"\nSummary Epoch {epoch+1}/{num_epochs}: Train Loss: {t_avg_loss:.4f}, Val Loss: {v_avg_loss:.4f}, LR: {current_lr:.2e}")
         print(f"Metrics -> IoU: {v_avg_iou:.4f}, Dice: {v_avg_dice:.4f}, Acc: {v_avg_acc:.4f}, Prec: {v_avg_prec:.4f}, Rec: {v_avg_rec:.4f}")
