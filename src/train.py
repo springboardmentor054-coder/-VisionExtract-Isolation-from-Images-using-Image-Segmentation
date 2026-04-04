@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+from torch.amp import autocast, GradScaler
+from tqdm import tqdm
 from pycocotools.coco import COCO
 
 from dataset import CocoSegmentationDataset, get_train_transforms, get_val_transforms
@@ -14,7 +16,7 @@ os.environ['XDG_CACHE_HOME'] = r'E:\torch_cache'
 
 
 class DiceLoss(nn.Module):
-    def __init__(self, smooth=1e-6):
+    def __init__(self, smooth=1.0):
         super(DiceLoss, self).__init__()
         self.smooth = smooth
 
@@ -91,20 +93,21 @@ def main():
         generator=torch.Generator().manual_seed(42)
     )[:2]
 
-    # Windows compatible DataLoader:
-    # num_workers=0 is cleanest for Windows multiprocessing, pin_memory speed up GPU transfer.
-    train_loader = DataLoader(train_ds, batch_size=8, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=8, shuffle=False, num_workers=0, pin_memory=True)
+    # Use num_workers=2 for Windows; pin_memory=True for faster GPU transfer.
+    BATCH_SIZE = 8
+    NUM_WORKERS = 2 if os.name != 'nt' else 0 # Default to 0 for Windows, but we'll try 2 if requested
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0, pin_memory=True)
     
-    print(f"Train batches: {len(train_loader)}")
-    print(f"Val batches: {len(val_loader)}")
-
     # 3. Model & Loss Setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = UNet().to(device)
 
-    optimizer = optim.Adam(model.parameters(), lr=1e-3)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3)
+    # Optimization Setup: Use Adam with a lower LR for fine-tuning pre-trained weights.
+    # Optimization Setup: Use Adam with localized LR for finer convergence.
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=5, factor=0.5)
+    scaler = GradScaler('cuda') # For Mixed Precision Training
 
     # 4. Resume from Checkpoint Logic
     start_epoch = 0
@@ -115,46 +118,77 @@ def main():
         latest_checkpoint = os.path.join(checkpoint_dir, checkpoint_files[-1])
         print(f"Found checkpoint: {latest_checkpoint}. Resuming...")
         
-        checkpoint = torch.load(latest_checkpoint, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        start_epoch = checkpoint['epoch']
-        print(f"Resuming from Epoch {start_epoch}")
-    else:
-        print("No checkpoints found. Starting from scratch.")
-
+        try:
+            # Load weights with a compatibility check for changed architectures
+            checkpoint = torch.load(latest_checkpoint, map_location=device, weights_only=False)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+            start_epoch = checkpoint['epoch']
+            
+            # Refinement Phase: Optimized for fast loss decrease in final 10 epochs.
+            # Resetting LR to 5e-5 (Half of initial) to "jolt" the model.
+            if start_epoch >= 100:
+                print(f"Applying Refinement Phase: Optimizing LR to 5e-5 for fast convergence.")
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = 5e-5
+                # Reset scheduler's 'best' to ensure it doesn't decay early
+                scheduler.best = 0 if scheduler.mode == 'max' else float('inf')
+                    
+            print(f"Resuming training from Epoch {start_epoch}")
+        except Exception as e:
+            print(f"Starting fresh or error loading checkpoint: {e}")
+            # Weights will default to pre-trained initialization from torchvision
+            pass 
+    
+    best_iou = 0.0
     best_loss = float('inf')
 
     # 5. Training Loop
-    num_epochs = 100
-    print(f"Starting training loop for {num_epochs} epochs...")
+    num_epochs = 110
+    print(f"Training initialized on {device}. Total epochs: {num_epochs}")
 
     for epoch in range(start_epoch, num_epochs):
         model.train()
         epoch_loss = 0
-        print(f"Epoch {epoch+1} started. Fetching batches...")
-        for batch_idx, (images, masks) in enumerate(train_loader):
-            if batch_idx == 0:
-                print(f"First batch received! Image shape: {images.shape}")
+        current_lr = optimizer.param_groups[0]['lr']
+        
+        train_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Train]")
+        for batch_idx, (images, masks) in enumerate(train_bar):
             images, masks = images.to(device), masks.to(device)
             
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = combined_loss(outputs, masks)
-            loss.backward()
-            optimizer.step()
+            
+            # Using AMP for faster training
+            with torch.amp.autocast('cuda'):
+                outputs = model(images)
+                loss = combined_loss(outputs, masks)
+            
+            scaler.scale(loss).backward()
+            
+            # Gradient clipping to prevent exploration instability
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
+            scaler.step(optimizer)
+            scaler.update()
+            
             epoch_loss += loss.item()
+            train_bar.set_postfix(loss=loss.item(), lr=f"{current_lr:.2e}")
 
         # Validation
         model.eval()
         val_loss = 0
         total_iou, total_dice, total_prec, total_rec, total_acc = 0, 0, 0, 0, 0
+        
+        val_bar = tqdm(val_loader, desc=f"Epoch {epoch+1}/{num_epochs} [Val]")
         with torch.no_grad():
-            for images, masks in val_loader:
+            for images, masks in val_bar:
                 images, masks = images.to(device), masks.to(device)
-                outputs = model(images)
                 
-                v_loss = combined_loss(outputs, masks)
+                with torch.amp.autocast('cuda'):
+                    outputs = model(images)
+                    v_loss = combined_loss(outputs, masks)
+                
                 val_loss += v_loss.item()
                 
                 # Metrics
@@ -164,6 +198,7 @@ def main():
                 total_prec += prec
                 total_rec += rec
                 total_acc += acc
+                val_bar.set_postfix(val_loss=v_loss.item(), iou=iou)
         
         t_avg_loss = epoch_loss / len(train_loader)
         v_avg_loss = val_loss / len(val_loader)
@@ -174,21 +209,23 @@ def main():
         v_avg_rec = total_rec / len(val_loader)
         v_avg_acc = total_acc / len(val_loader)
 
-        scheduler.step(v_avg_loss)
+        scheduler.step(v_avg_iou)
         
-        print(f"Epoch {epoch+1}/{num_epochs}: Train Loss: {t_avg_loss:.4f}, Val Loss: {v_avg_loss:.4f}")
+        print(f"\nSummary Epoch {epoch+1}/{num_epochs}: Train Loss: {t_avg_loss:.4f}, Val Loss: {v_avg_loss:.4f}, LR: {current_lr:.2e}")
         print(f"Metrics -> IoU: {v_avg_iou:.4f}, Dice: {v_avg_dice:.4f}, Acc: {v_avg_acc:.4f}, Prec: {v_avg_prec:.4f}, Rec: {v_avg_rec:.4f}")
         
-        if v_avg_loss < best_loss:
-            best_loss = v_avg_loss
+        # Save best model based on IoU (standard for segmentation)
+        if v_avg_iou > best_iou:
+            best_iou = v_avg_iou
             best_path = os.path.join(checkpoint_dir, "best_model.pth")
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'iou': v_avg_iou,
                 'loss': v_avg_loss,
             }, best_path)
-            print(f"Saved best model: {best_path}")
+            print(f"--> Saved new BEST model (IoU: {v_avg_iou:.4f}): {best_path}")
 
         if (epoch + 1) % 10 == 0 or (epoch + 1) == num_epochs:
             save_path = os.path.join(checkpoint_dir, f"unet_epoch_{epoch+1}.pth")
