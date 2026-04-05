@@ -365,6 +365,137 @@ These outputs confirm that the model successfully separates subject from backgro
 - Deploy real-time segmentation system  
 
 ---
+# VisionExtract – Milestone 4: Deployment & Application
+
+## 📌 Overview
+Milestone 4 focuses on deploying the trained segmentation model into a usable application. This stage enables users to upload an image and automatically extract the main subject using the trained U-Net model.
+
+---
+
+## 🎯 Objective
+- Deploy trained segmentation model  
+- Accept user input image  
+- Generate segmentation mask  
+- Isolate subject from background  
+- Display final output  
+
+---
+
+## 🧠 Pipeline (Milestone 4)
+User Image
+↓
+Preprocessing (Resize, Normalize)
+↓
+Load Trained U-Net Model
+↓
+Prediction (Mask)
+↓
+Binary Mask (Threshold = 0.5)
+↓
+Apply Mask to Image
+↓
+Isolated Subject Output
+---
+
+### Mathematical Representation
+Output(x,y) = Image(x,y) × Mask(x,y)
+Mask(x,y) ∈ {0,1}
+
+---
+
+---
+
+## ⚙️ Implementation
+
+### 1. Load Trained Model
+- Load saved weights (`model.pth`)
+- Set model to evaluation mode
+
+### 2. Input Image
+- User uploads or provides an image  
+- Image converted to RGB format  
+
+### 3. Preprocessing
+- Resize to 256×256  
+- Normalize pixel values  
+- Convert to tensor  
+
+### 4. Prediction
+- Pass image through model  
+- Generate probability mask  
+- Convert to binary mask (threshold = 0.5)  
+
+### 5. Subject Isolation
+- Apply mask to original image  
+- Remove background pixels  
+
+### 6. Output Display
+- Show original image  
+- Show predicted mask  
+- Show isolated subject  
+
+---
+
+## 💻 Application (Streamlit UI)
+
+A simple web interface is built using Streamlit:
+
+### Features:
+- Upload image  
+- View segmentation result  
+- Display isolated subject  
+
+### Run Application:
+```bash
+streamlit run app.py
+
+
+---
+
+## ⚙️ Implementation
+
+### 1. Load Trained Model
+- Load saved weights (`model.pth`)
+- Set model to evaluation mode
+
+### 2. Input Image
+- User uploads or provides an image  
+- Image converted to RGB format  
+
+### 3. Preprocessing
+- Resize to 256×256  
+- Normalize pixel values  
+- Convert to tensor  
+
+### 4. Prediction
+- Pass image through model  
+- Generate probability mask  
+- Convert to binary mask (threshold = 0.5)  
+
+### 5. Subject Isolation
+- Apply mask to original image  
+- Remove background pixels  
+
+### 6. Output Display
+- Show original image  
+- Show predicted mask  
+- Show isolated subject  
+
+---
+
+## 💻 Application (Streamlit UI)
+
+A simple web interface is built using Streamlit:
+
+### Features:
+- Upload image  
+- View segmentation result  
+- Display isolated subject  
+
+### Run Application:
+```bash
+streamlit run app.py
+
 ## Author
 
 Dudala Mohana Naga Venkata Sri Lasya
@@ -372,6 +503,8 @@ B.Tech CSE (AIML)
 
 ---
 
-## Conclusion
+📌 Conclusion
 
-This project demonstrates the complete pipeline for subject isolation using semantic segmentation and prepares the foundation for building advanced background removal systems.
+The VisionExtract project successfully demonstrates an end-to-end image segmentation pipeline for isolating the main subject from images. In Milestone 1, the foundation was established by selecting and understanding a suitable dataset and preparing it for training. Milestone 2 focused on implementing a U-Net model with a pretrained encoder and training it using appropriate loss functions to learn meaningful segmentation patterns. In Milestone 3, the trained model was evaluated using metrics such as IoU and Dice Score, and its effectiveness was verified through visualization of predicted masks and isolated outputs. Finally, in Milestone 4, the model was deployed into a user-friendly application, enabling real-time subject extraction from input images.
+
+Overall, the project highlights the practical application of deep learning in computer vision, covering the complete workflow from data preprocessing to deployment. It demonstrates not only technical implementation but also the ability to build a usable system. This approach can be extended to real-world applications such as photo editing, background removal, surveillance, and content creation.
