@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionExtract — Isolate Subjects with AI</title>
+
+    <script src="https://cdn.tailwindcss.com\"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        :root {
+            --tw-color-primary: #6366f1;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .tail-container * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .upload-zone {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .upload-zone:hover {
+            transform: scale(1.02);
+            box-shadow: 0 25px 50px -12px rgb(99 102 241 / 0.15);
+        }
+
+        .result-image {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .result-image:hover {
+            transform: scale(1.03);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="tail-container bg-gradient-to-br from-slate-50 via-white to-indigo-50 min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-3xl w-full mx-auto">
+
+        <div class="flex items-center justify-between mb-10">
+            <div class="flex items-center gap-x-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                    ✨
+                </div>
+                <h1 class="text-4xl font-semibold tracking-tight gradient-text">VisionExtract</h1>
+            </div>
+            <div class="flex items-center gap-x-2 text-sm font-medium text-slate-500">
+                <div class="flex items-center gap-x-1 px-3 py-1 bg-white rounded-3xl shadow-sm border border-slate-100">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    AI Ready
+                </div>
+                <span class="text-xs text-slate-400">v2.1</span>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-3xl shadow-2xl border border-slate-100 overflow-hidden">
+
+            <div class="px-8 pt-8 pb-6">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-semibold text-slate-900">Extract the main subject instantly</h2>
+                    <p class="text-slate-600 mt-2">Drop an image • AI removes the background in seconds</p>
+                </div>
+
+                <form id="upload-form" method="POST" enctype="multipart/form-data" class="space-y-6">
+
+
+                    <label id="upload-zone" 
+                           class="upload-zone block border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-3xl h-80 flex flex-col items-center justify-center cursor-pointer bg-white/70 hover:bg-indigo-50/50 relative overflow-hidden">
+                        
+                        <input type="file" name="file" accept="image/*" id="file-input" class="hidden" required>
+                        
+                        <div id="default-state" class="text-center">
+                            <div class="mx-auto w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-inner">
+                                📸
+                            </div>
+                            <p class="text-xl font-medium text-slate-700">Drop your image here</p>
+                            <p class="text-slate-500 mt-1">or <span class="text-indigo-600 font-medium">browse from your device</span></p>
+                            <p class="text-xs text-slate-400 mt-8">PNG, JPG, WEBP • Max 15 MB</p>
+                        </div>
+
+                        <!-- Preview state -->
+                        <div id="preview-state" class="hidden flex-col items-center justify-center w-full h-full p-6">
+                            <div class="relative w-52 h-52 rounded-2xl overflow-hidden border-4 border-white shadow-xl mb-4">
+                                <img id="image-preview" src="" alt="Preview" class="w-full h-full object-cover">
+                            </div>
+                            <p id="file-name" class="font-medium text-slate-700 text-center line-clamp-1 max-w-[220px]"></p>
+                            <button type="button" 
+                                    onclick="resetUpload()"
+                                    class="mt-6 text-sm flex items-center gap-x-2 text-slate-500 hover:text-slate-700">
+                                <span>✕</span>
+                                <span>Choose different image</span>
+                            </button>
+                        </div>
+                    </label>
+
+                    <div class="flex justify-center">
+                        <button type="submit" 
+                                id="submit-btn"
+                                class="flex items-center gap-x-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold text-lg px-10 py-5 rounded-2xl shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40">
+                            <span>🚀 Process with AI</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+
+                {% if error %}
+                <div class="mt-6 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl flex items-center gap-x-3 text-sm">
+                    <span class="text-xl">⚠️</span>
+                    <p>{{ error }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if original_url and isolated_url %}
+            <div class="border-t border-slate-100 bg-slate-50/70 px-8 py-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-slate-800">Your results are ready ✨</h3>
+                    <button onclick="window.location.reload()" 
+                            class="text-sm flex items-center gap-x-2 text-slate-500 hover:text-slate-700 font-medium">
+                        <span>⟳</span> Try another image
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white rounded-3xl p-4 shadow-sm">
+                        <div class="flex justify-between items-center mb-4 px-2">
+                            <div class="flex items-center gap-x-2">
+                                <span class="px-3 py-1 bg-slate-100 text-slate-600 text-xs font-medium rounded-3xl">ORIGINAL</span>
+                            </div>
+                            <span class="text-xs text-slate-400">Before</span>
+                        </div>
+                        <div class="aspect-square rounded-2xl overflow-hidden bg-slate-100 result-image">
+                            <img src="{{ original_url }}" 
+                                 alt="Original image"
+                                 class="w-full h-full object-contain">
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-4 shadow-sm relative">
+                        <div class="flex justify-between items-center mb-4 px-2">
+                            <div class="flex items-center gap-x-2">
+                                <span class="px-3 py-1 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-xs font-medium rounded-3xl">ISOLATED</span>
+                            </div>
+                            <span class="text-xs text-slate-400">After • AI Magic</span>
+                        </div>
+                        <div class="aspect-square rounded-2xl overflow-hidden bg-slate-100 result-image">
+                            <img src="{{ isolated_url }}" 
+                                 alt="Isolated subject"
+                                 class="w-full h-full object-contain">
+                        </div>
+
+                        <div class="absolute -bottom-3 right-6">
+                            <a href="{{ isolated_url }}" 
+                               download="isolated-subject.png"
+                               class="flex items-center gap-x-3 bg-white text-indigo-700 shadow-xl shadow-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/40 px-7 py-4 rounded-3xl font-semibold text-sm border border-slate-100">
+                                <span>⬇️</span>
+                                <span>Download PNG</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-center text-xs text-slate-400 mt-8">
+                    Powered by advanced vision AI • Background removed in seconds
+                </p>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <div class="text-center text-xs text-slate-400 mt-8 flex items-center justify-center gap-x-4">
+            <span>🔒 Privacy-first • Your images are never stored</span>
+            <span class="w-px h-3 bg-slate-300"></span>
+            <span>Made for creators</span>
+        </div>
+    </div>
+
+    <script>
+        function initializeTailwind() {
+            tailwind.config = {
+                content: [],
+                theme: {
+                    extend: {}
+                }
+            }
+        }
+
+        function setupUploadZone() {
+            const uploadZone = document.getElementById('upload-zone')
+            const fileInput = document.getElementById('file-input')
+            const defaultState = document.getElementById('default-state')
+            const previewState = document.getElementById('preview-state')
+            const imagePreview = document.getElementById('image-preview')
+            const fileNameEl = document.getElementById('file-name')
+
+            uploadZone.addEventListener('click', (e) => {
+                if (e.target.closest('button')) return
+                fileInput.click()
+            })
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleFile(e.target.files[0])
+                }
+            })
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault()
+                uploadZone.classList.add('!border-indigo-500', 'bg-indigo-50')
+            })
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('!border-indigo-500', 'bg-indigo-50')
+            })
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault()
+                uploadZone.classList.remove('!border-indigo-500', 'bg-indigo-50')
+                
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleFile(e.dataTransfer.files[0])
+                }
+            })
+
+            function handleFile(file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('Please upload a valid image file.')
+                    return
+                }
+
+                defaultState.classList.add('hidden')
+                previewState.classList.remove('hidden')
+                
+                fileNameEl.textContent = file.name
+                
+                const reader = new FileReader()
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result
+                }
+                reader.readAsDataURL(file)
+            }
+
+            document.getElementById('upload-form').addEventListener('submit', () => {
+                const btn = document.getElementById('submit-btn')
+                btn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    Processing with AI...
+                `
+                btn.disabled = true
+            })
+        }
+
+        window.resetUpload = function() {
+            const defaultState = document.getElementById('default-state')
+            const previewState = document.getElementById('preview-state')
+            const fileInput = document.getElementById('file-input')
+            
+            defaultState.classList.remove('hidden')
+            previewState.classList.add('hidden')
+            fileInput.value = ''
+        }
+
+        window.onload = function() {
+            initializeTailwind()
+            setupUploadZone()
+            
+            if (document.querySelector('[src*="isolated"]')) {
+                console.log('%c🎉 Subject successfully isolated!', 'color:#6366f1;font-weight:600')
+            }
+        }
+    </script>
+</body>
+</html>

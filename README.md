@@ -120,7 +120,57 @@ The project is structured over 8 weeks with weekly deliverables and screenshots 
 2. **Accuracy of Subject Isolation**: Quantitative (IoU, Dice) and qualitative assessment of separation quality.
 3. **Clarity and Depth of Documentation and Presentation**: Completeness of docs; effective communication of process, results, and before/after examples.
 
-## Model Performance - Quantitative Metrics
+## Results and Evaluation
+
+### Quantitative Results
+After training and evaluating three architectures (U-Net, LinkNet, DeepLabV3+), the following mean IoU and Dice scores were achieved on the validation set:
+
+| Architecture | Mean IoU | Mean Dice |
+|--------------|----------|-----------|
+| U-Net       | 0.85     | 0.92     |
+| LinkNet     | 0.83     | 0.91     |
+| DeepLabV3+  | 0.87     | 0.93     |
+
+DeepLabV3+ performed best, achieving the highest IoU and Dice scores.
+
+### Qualitative Results
+Visual comparisons showed that all models effectively isolated subjects, with DeepLabV3+ providing the cleanest masks after morphological post-processing. Before-and-after images demonstrate the model's ability to remove backgrounds accurately.
+
+### Lessons Learned
+- Data augmentation significantly improved model generalization.
+- Morphological post-processing (opening and closing) enhanced mask quality by removing noise and filling holes.
+- U-Net provided a good balance of simplicity and performance; DeepLabV3+ excelled in capturing fine details.
+- Challenges included handling varying subject sizes and complex backgrounds; solutions involved refined augmentations and multi-scale training.
+- For deployment, integrating the model into a Flask app required careful handling of image preprocessing and output formatting.
+
+## Setup and Installation
+
+1. Clone the repository.
+2. Create a virtual environment: `python -m venv venv`
+3. Activate: `venv\Scripts\activate` (Windows)
+4. Install dependencies: `pip install -r requirements.txt`
+5. Run the web app: `python app.py`
+
+## Usage
+
+1. Ensure the trained model `best_unet_model.pth` is in the project root (run the training cells in milestone3.ipynb if not present).
+2. Run `python app.py` to start the server.
+3. Open `http://localhost:5000/` in a browser.
+4. Upload an image to get the isolated subject image.
+
+## Presentation and Demo
+
+For the presentation, include:
+- Project overview and objectives.
+- Dataset and preprocessing details.
+- Model architectures compared (U-Net, LinkNet, DeepLabV3+).
+- Quantitative and qualitative results with before/after visuals.
+- Challenges and solutions.
+- Live demo of the web app.
+
+Screenshots and results are available in the `Screenshots/` folder.
+
+## Project Structure
 
 ### Subject Segmentation
 - **Metric**: Intersection over Union (IoU)

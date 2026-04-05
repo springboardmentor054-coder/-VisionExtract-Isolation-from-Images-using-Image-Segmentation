@@ -1,0 +1,13 @@
+torch>=2.0.0
+torchvision>=0.15.0
+segmentation-models-pytorch
+albumentations
+opencv-python
+pycocotools
+tqdm
+torchmetrics
+matplotlib
+pandas
+plotly
+flask
+pillow
