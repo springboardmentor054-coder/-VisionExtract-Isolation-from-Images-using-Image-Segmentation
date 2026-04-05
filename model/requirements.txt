@@ -1,0 +1,29 @@
+# VisionExtract - Python Dependencies
+# Install with: pip install -r requirements.txt
+# GPU (recommended): install torch separately first:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image processing
+albumentations>=1.3.0
+Pillow>=9.0.0
+numpy>=1.23.0
+
+# COCO dataset tools
+pycocotools>=2.0.6
+
+# API / Web
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+
+# Training utilities
+tqdm>=4.65.0
+tensorboard>=2.13.0
+
+# Optional: for notebook exploration
+# matplotlib>=3.7.0
+# jupyter>=1.0.0
