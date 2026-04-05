@@ -1,5 +1,9 @@
 <div align="center">
 
+<img src="docs/images/banner.png" alt="VisionExtract Banner" width="100%">
+
+<br>
+
 # 🌌 VisionExtract: AI-Powered Subject Isolation System
 
 [![Python Version](https://img.shields.io/badge/Python-3.10+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -20,6 +24,7 @@
 - [Key Features](#-key-features)
 - [System Architecture](#-system-architecture)
 - [Performance Benchmarks](#-performance-benchmarks)
+- [Visual Gallery](#-visual-gallery)
 - [Getting Started](#-getting-started)
 - [Usage](#-usage)
 - [Project Structure](#-project-structure)
@@ -78,6 +83,18 @@ The model was rigorously trained over **110 epochs**, including a specialized 10
 | **ResNet34-UNet** | - | **0.62 - 0.64+** |
 
 </details>
+
+---
+
+## 🖼️ Visual Gallery
+
+Below are real output samples demonstrating the model's ability to cleanly extract complex subjects from diverse backgrounds.
+
+| Original Input Image | Isolated Subject (VisionExtract) |
+| :---: | :---: |
+| <img src="outputs/Input1.jpg" width="300" alt="Input 1"> | <img src="outputs/Output1.jpg" width="300" alt="Output 1"> |
+| <img src="outputs/Input2.jpg" width="300" alt="Input 2"> | <img src="outputs/Output2.jpg" width="300" alt="Output 2"> |
+| <img src="outputs/Input3.jpg" width="300" alt="Input 3"> | <img src="outputs/Output3.jpg" width="300" alt="Output 3"> |
 
 ---
 
