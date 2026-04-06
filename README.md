@@ -55,12 +55,6 @@ Following a **110-epoch training cycle** (including a 10-epoch **Refinement Phas
 | **Dice Score** | **0.78+** |
 | **Inference Time** | **~0.15s (GPU accelerated)** |
 
-### 📊 Model Comparison
-| Model | IoU |
-| :--- | :--- |
-| **UNet** | **0.47** |
-| **ResNetUNet** | **0.62** |
-
 ---
 
 ## 🖼️ Visual Results (Gallery)
@@ -117,15 +111,6 @@ python src/inference.py --image path/to/sample.jpg --display
 # Full Training Cycle
 python src/train.py
 ```
-
----
-
-## ⚠️ Limitations
-
-While VisionExtract is highly effective, it has certain constraints:
-- **Struggles on extremely crowded scenes**: Multiple overlapping subjects can lead to merged or incomplete masks.
-- **High-resolution increases inference time**: Processing images significantly larger than the base 256px resolution requires more VRAM and compute.
-- **Small object segmentation may vary**: Tiny details (like thin strands of hair or distant objects) may be smoothed out during upscale.
 
 ---
 
