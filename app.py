@@ -51,8 +51,8 @@ kernel = np.ones((5, 5), np.uint8)
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        file = request.files['file']
-        if file and model:
+        file = request.files.get('file')
+        if file and file.filename and model:
             try:
                 image = Image.open(file.stream).convert('RGB')
                 image_np = np.array(image)
@@ -78,6 +78,8 @@ def upload_file():
                 return render_template('index.html', original_url=original_url, isolated_url=isolated_url)
             except Exception as e:
                 return render_template('index.html', error=f"Processing failed: {str(e)}")
+        elif not file or not file.filename:
+            return render_template('index.html', error="Please upload an image.")
         elif not model:
             return render_template('index.html', error="Model not loaded. Please check model file.")
 

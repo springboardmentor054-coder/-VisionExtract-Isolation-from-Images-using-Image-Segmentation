@@ -91,7 +91,7 @@
                     <label id="upload-zone" 
                            class="upload-zone block border-2 border-dashed border-slate-300 hover:border-indigo-400 rounded-3xl h-80 flex flex-col items-center justify-center cursor-pointer bg-white/70 hover:bg-indigo-50/50 relative overflow-hidden">
                         
-                        <input type="file" name="file" accept="image/*" id="file-input" class="hidden" required>
+                        <input type="file" name="file" accept="image/*" id="file-input" class="hidden">
                         
                         <div id="default-state" class="text-center">
                             <div class="mx-auto w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-4xl mb-6 shadow-inner">
@@ -222,7 +222,7 @@
 
             uploadZone.addEventListener('click', (e) => {
                 if (e.target.closest('button')) return
-                fileInput.click()
+                // Removed fileInput.click() to prevent double dialog
             })
 
             fileInput.addEventListener('change', (e) => {
@@ -245,7 +245,11 @@
                 uploadZone.classList.remove('!border-indigo-500', 'bg-indigo-50')
                 
                 if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                    handleFile(e.dataTransfer.files[0])
+                    const file = e.dataTransfer.files[0];
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    fileInput.files = dt.files;
+                    handleFile(file);
                 }
             })
 
@@ -267,7 +271,13 @@
                 reader.readAsDataURL(file)
             }
 
-            document.getElementById('upload-form').addEventListener('submit', () => {
+            document.getElementById('upload-form').addEventListener('submit', (e) => {
+                const fileInput = document.getElementById('file-input');
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    e.preventDefault();
+                    alert('Please upload an image.');
+                    return;
+                }
                 const btn = document.getElementById('submit-btn')
                 btn.innerHTML = `
                     <svg class="animate-spin h-5 w-5 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

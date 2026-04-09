@@ -32,93 +32,113 @@ This project uses the [COCO 2017 Dataset](https://www.kaggle.com/datasets/awsaf4
 
 ## Model Architecture
 
-The model employs a deep learning-based semantic segmentation network (e.g., U-Net or a variant like DeepLab) to generate pixel-wise binary masks. During inference, the mask is applied to retain original pixels for the subject and set background pixels to black.
+The model employs a U-Net architecture with ResNet34 backbone for semantic segmentation to generate pixel-wise binary masks. During inference, the mask is applied to retain original pixels for the subject and set background pixels to black. Additional architectures like LinkNet were explored for comparison.
 
 ### High-Level Pipeline Diagram
 
 ```
-+----------------+     +----------------+     +----------------+     +-----------------+
-|   Web App      |     |   HTTP Request |     |   Image Encoder|     | Segmentation    |
-| (User Upload)  | --> | (Backend API)  | --> | (CNN Backbone) | --> | Model (U-Net)   |
-|                |     |                |     |                |     |                 |
-+----------------+     +----------------+     +----------------+     +-----------------+
-                                                                  |
-                                                                  v
-+----------------+     +----------------+     +----------------+     +-----------------+
-|   Flask/FastAPI| <-- |   Result Mask  | <-- |   Decoder      | <-- |   Output Image  |
-| (Backend Server|     | (Binary: Subject|     | (Upsampling)   |     | (Subject Only)  |
-| on Cloud)      |     | vs Background) |     |                |     |                 |
-+----------------+     +----------------+     +----------------+     +-----------------+
+User Upload → Image Preprocessing (Resize, Normalize) → U-Net Model → Binary Mask → 
+Morphological Post-Processing → Apply Mask to Image → Isolated Subject Output
 ```
 
-- **Input**: RGB image (e.g., 512x512 resolution).
+- **Input**: RGB image (resized to 256x256 during training/inference).
 - **Output**: Isolated subject image with black background.
-- **Backbone**: ResNet or MobileNet for feature extraction.
-- **Deployment**: Hosted on a cloud server (e.g., AWS/GCP) via Flask/FastAPI.
+- **Backbone**: ResNet34 for feature extraction.
+- **Deployment**: Local Flask web application with HTML/CSS UI.
 
-## Modules to Implement
+## Modules Implemented
 
 ### 1. Data Preprocessing and Feature Engineering
 - Handle raw image and mask data preparation for consistency.
-- Apply data augmentation (cropping, flipping, color perturbation), normalization.
-- Convert masks to binary subject-background format.
+- Apply data augmentation (resize, horizontal flip, elastic transform, grid distortion, brightness/contrast).
+- Convert multi-class COCO masks to binary subject-background format.
 - Ensure alignment between images and masks for accurate training.
 
 ### 2. Building the Segmentation Model
-- Predict pixel-wise binary masks separating subject from background.
+- Implemented U-Net with ResNet34 backbone for pixel-wise binary segmentation.
+- Explored LinkNet architecture for comparison.
 - During inference: Retain input pixels for subject; replace background with black.
 
 ### 3. Evaluation and Fine-Tuning
-- Quantitative metrics: IoU, Dice Coefficient, Precision, Recall, Pixel-wise Accuracy.
+- Quantitative metrics: IoU, Dice Coefficient, Pixel-wise Accuracy.
 - Qualitative review: Inspect sample output images for visual fidelity.
-- Fine-tune with hyperparameters or additional augmentations.
+- Fine-tuned with hyperparameters, augmentations, and post-processing (morphological operations).
 
-### 4. Documentation and Presentation Preparation
-- Document dataset handling, pipeline, experiments, and results.
-- Include before/after visuals and explain challenges/solutions.
+### 4. Web Application and Deployment
+- Flask-based web app for image upload and real-time inference.
+- Beautiful UI with Tailwind CSS for user interaction.
+- Automated pipeline from upload to result display.
 
 ## Implementation Milestones
 
 The project is structured over 8 weeks with weekly deliverables and screenshots of outputs.
 
-### Milestone 1: Project Initialization and Data Setup
+### Milestone 1: Project Initialization and Data Setup ✅ COMPLETED
 - **Week 1: Project Initialization and Dataset Acquisition**
-  - Define objectives and acquire/inspect COCO 2017 dataset.
-  - Explore structure; view example images and masks.
+  - Defined objectives and acquired/inspected COCO 2017 dataset.
+  - Explored structure; viewed example images and masks (COCO.ipynb).
 - **Week 2: Data Preprocessing and Validation**
-  - Build preprocessing pipeline (resize, normalization, augmentation).
-  - Ensure image-mask alignment; convert multi-class to binary masks.
+  - Built preprocessing pipeline (resize, normalization, augmentation).
+  - Ensured image-mask alignment; converted multi-class to binary masks.
 
-### Milestone 2: Initial Model Training
+### Milestone 2: Initial Model Training ✅ CODE COMPLETE
 - **Week 3: Initial Model Training**
-  - Implement segmentation network (e.g., U-Net).
-  - Train on processed data; monitor metrics.
-  - Visualize early predictions.
+  - Implemented U-Net segmentation network with ResNet34 backbone.
+  - Training pipeline with loss monitoring and metrics (milestone2.ipynb).
+  - Early prediction visualization.
 - **Week 4: Predictions and Fine-Tuning**
-  - Generate validation predictions; compare with ground-truth.
-  - Adjust hyperparameters and augmentations.
+  - Validation predictions; comparison with ground-truth.
+  - Hyperparameter adjustments and data augmentation.
 
-### Milestone 3: Improvements and Inference
+### Milestone 3: Improvements and Inference ✅ CODE COMPLETE
 - **Week 5: Improve Data and Experiment with Architectures**
-  - Refine preprocessing; explore post-processing for cleaner masks.
-  - Test variant architectures; document comparisons.
+  - Refined preprocessing with advanced augmentations.
+  - Explored LinkNet architecture; documented comparisons (milestone3.ipynb).
 - **Week 6: Inference**
-  - Deploy model for new images.
-  - Automate pipeline; test on unseen data for robustness.
+  - Deployed model for inference on new images.
+  - Automated pipeline; tested on unseen data.
 
-### Milestone 4: Full Pipeline and Demo
+### Milestone 4: Full Pipeline and Demo ✅ COMPLETED
 - **Week 7: Full Pipeline and User Interface**
-  - Build web app for image upload and result download.
-  - Integrate preprocessing, inference, and output generation.
+  - Built Flask web app for image upload and result display (app.py, templates/index.html).
+  - Integrated preprocessing, model inference, and output generation.
 - **Week 8: Documentation, Presentation, and Demo**
-  - Compile docs with results and lessons learned.
-  - Prepare presentation with visuals; conduct live demo.
+  - Compiled comprehensive documentation (this README).
+  - Prepared presentation materials with screenshots.
+  - Ready for live demonstration.
 
-## Evaluation Criteria
+## Setup and Installation
 
-1. **Completion of Milestones**: Successful data handling, model development, inference, and UI integration within timelines.
-2. **Accuracy of Subject Isolation**: Quantitative (IoU, Dice) and qualitative assessment of separation quality.
-3. **Clarity and Depth of Documentation and Presentation**: Completeness of docs; effective communication of process, results, and before/after examples.
+1. **Prerequisites**: Python 3.8+, pip, and a GPU (optional but recommended for training).
+2. **Clone/Download**: Ensure all project files are in the workspace.
+3. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. **Dataset Setup**:
+   - Download COCO 2017 dataset from Kaggle.
+   - Extract to a `data/` folder in the project root.
+   - Ensure `data/train2017/`, `data/val2017/`, and `data/annotations/` exist.
+5. **Model Training** (if needed):
+   - Run cells in `milestone2.ipynb` for initial training.
+   - Run cells in `milestone3.ipynb` for refined training and architecture comparison.
+   - Trained model will be saved as `Model/best_unet_model.pth`.
+
+## Usage
+
+### Web Application
+1. Ensure the trained model `Model/best_unet_model.pth` exists.
+2. Run the Flask app:
+   ```bash
+   python app.py
+   ```
+3. Open `http://localhost:5000/` in your browser.
+4. Upload an image to see the isolated subject result.
+
+### Notebooks
+- `COCO.ipynb`: Dataset exploration and preprocessing.
+- `milestone2.ipynb`: Initial model training and validation.
+- `milestone3.ipynb`: Advanced training, architecture comparison, and inference.
 
 ## Results and Evaluation
 
@@ -127,77 +147,40 @@ After training and evaluating three architectures (U-Net, LinkNet, DeepLabV3+), 
 
 | Architecture | Mean IoU | Mean Dice |
 |--------------|----------|-----------|
-| U-Net       | 0.85     | 0.92     |
-| LinkNet     | 0.83     | 0.91     |
-| DeepLabV3+  | 0.87     | 0.93     |
+| U-Net       | 0.632167 | 0.765653 |
+| LinkNet     | 0.614253 | 0.754901 |
+| DeepLabV3+  | 0.581693 | 0.727155 |
 
-DeepLabV3+ performed best, achieving the highest IoU and Dice scores.
+U-Net performed best, achieving the highest IoU and Dice scores.
 
 ### Qualitative Results
-Visual comparisons showed that all models effectively isolated subjects, with DeepLabV3+ providing the cleanest masks after morphological post-processing. Before-and-after images demonstrate the model's ability to remove backgrounds accurately.
+Visual results show effective subject isolation with clean masks after morphological post-processing. Before-and-after images demonstrate background removal capabilities.
 
 ### Lessons Learned
-- Data augmentation significantly improved model generalization.
-- Morphological post-processing (opening and closing) enhanced mask quality by removing noise and filling holes.
-- U-Net provided a good balance of simplicity and performance; DeepLabV3+ excelled in capturing fine details.
-- Challenges included handling varying subject sizes and complex backgrounds; solutions involved refined augmentations and multi-scale training.
-- For deployment, integrating the model into a Flask app required careful handling of image preprocessing and output formatting.
-
-## Setup and Installation
-
-1. Clone the repository.
-2. Create a virtual environment: `python -m venv venv`
-3. Activate: `venv\Scripts\activate` (Windows)
-4. Install dependencies: `pip install -r requirements.txt`
-5. Run the web app: `python app.py`
-
-## Usage
-
-1. Ensure the trained model `best_unet_model.pth` is in the project root (run the training cells in milestone3.ipynb if not present).
-2. Run `python app.py` to start the server.
-3. Open `http://localhost:5000/` in a browser.
-4. Upload an image to get the isolated subject image.
-
-## Presentation and Demo
-
-For the presentation, include:
-- Project overview and objectives.
-- Dataset and preprocessing details.
-- Model architectures compared (U-Net, LinkNet, DeepLabV3+).
-- Quantitative and qualitative results with before/after visuals.
-- Challenges and solutions.
-- Live demo of the web app.
-
-Screenshots and results are available in the `Screenshots/` folder.
+- Data augmentation improved model robustness.
+- Morphological operations (opening/closing) enhanced mask quality.
+- U-Net provided reliable performance for subject segmentation.
+- Challenges: Varying subject sizes; solutions: Multi-scale augmentations.
+- Deployment: Flask integration required careful image handling.
 
 ## Project Structure
 
-### Subject Segmentation
-- **Metric**: Intersection over Union (IoU)
-  - **Description**: Measures overlap between predicted subject region and ground-truth mask divided by their union. High IoU indicates better segmentation accuracy.
-
-### Additional Metrics
-- **Metric**: Dice Coefficient, Pixel-wise Accuracy
-  - **Description**: Measures alignment and quality of predicted masks, especially useful for binary separation tasks.
-
-### Example Quantitative Goals
-1. **Subject Isolation Performance**
-   - **Goal**: Achieve high IoU and Dice scores on validation images, indicating the model reliably separates the subject from the background.
-
-
-## Project Structure
 ```
-visionextract/
-├── data/                  # Dataset and processed data
-├── src/                   # Source code
-│   ├── preprocess.py      # Data pipeline
-│   ├── model.py           # Segmentation model
-│   ├── train.py           # Training script
-│   └── inference.py       # Inference script
-├── app.py                 # Web app
-├── requirements.txt       # Dependencies
-├── screenshots/           # Documentation and screenshots
-└── README.md              # This file
+VisionExtract/
+├── app.py                          # Flask web application
+├── COCO.ipynb                      # Dataset exploration notebook
+├── milestone2.ipynb                # Initial training notebook
+├── milestone3.ipynb                # Advanced training and inference notebook
+├── requirements.txt                # Python dependencies
+├── README.md                       # This documentation
+├── Model/
+│   └── best_unet_model.pth         # Trained model weights
+├── templates/
+│   └── index.html                  # Web UI template
+├── Screenshots/                    # Visual results and documentation
+│   ├── milestone1/
+│   └── milestone2/
+└── data/                           # COCO dataset (download separately)
 ```
 
 ## Contributing
@@ -206,7 +189,8 @@ Contributions are welcome! Please fork the repo and submit a PR with your change
 
 ## Acknowledgments
 
-- Inspired by COCO dataset and segmentation best practices.
-- Built with PyTorch and Segmentation Models library.
+- COCO 2017 Dataset for training data.
+- PyTorch and Segmentation Models library for implementation.
+- Built as part of Infosys Springboard program.
 
- Check the `screenshot/` folder for weekly screenshots and full reports.
+Check the `Screenshots/` folder for weekly deliverables and visual results.
