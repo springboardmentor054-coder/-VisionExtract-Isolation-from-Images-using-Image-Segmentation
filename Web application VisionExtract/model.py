@@ -186,4 +186,4 @@ if __name__ == '__main__':
     out = model(dummy)
 
     print("Input:", dummy.shape)
-    print("Output:", out.shape) model.py 
+    print("Output:", out.shape) 
