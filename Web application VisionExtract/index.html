@@ -1,0 +1,541 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VisionExtract — Subject Isolation</title>
+  <style>
+    /* ── Reset & Base ───────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+  --bg:        #0d1117;   /* deep dark */
+  --surface:   #161b22;   /* card background */
+  --surface2:  #1f2937;   /* secondary panels */
+  --border:    #30363d;   /* subtle border */
+
+  --accent:    #6366f1;   /* indigo (primary) */
+  --accent2:   #22c55e;   /* green highlight */
+
+  --success:   #22c55e;
+  --danger:    #ef4444;
+
+  --text:      #e6edf3;
+  --muted:     #8b949e;
+
+  --radius:    12px;
+    }
+    body {
+  background: linear-gradient(135deg, #0d1117, #111827);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+    /* ── Header ─────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 1px solid var(--border);
+      padding: 1.2rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+    header h1 span { color: var(--accent2); }
+    .badge {
+      margin-left: auto;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    #status-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    #status-dot.online  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    #status-dot.offline { background: var(--danger);  box-shadow: 0 0 6px var(--danger); }
+
+    /* ── Main Layout ─────────────────────────── */
+    main {
+      flex: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* ── Upload Zone ─────────────────────────── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      border-color: var(--accent);
+      background: rgba(108, 99, 255, 0.05);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer;
+    }
+    .upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .upload-zone h2 { font-size: 1.1rem; margin-bottom: 0.4rem; }
+    .upload-zone p  { color: var(--muted); font-size: 0.9rem; }
+
+    /* ── Controls Bar ────────────────────────── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .control-group label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .slider-row { display: flex; align-items: center; gap: 0.5rem; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 140px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      background: var(--accent);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .slider-val {
+      font-size: 0.85rem;
+      color: var(--accent2);
+      min-width: 2.5rem;
+      text-align: right;
+    }
+    .btn {
+      padding: 0.6rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      margin-left: auto;
+    }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Results Grid ────────────────────────── */
+    .results {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 640px) { .results { grid-template-columns: 1fr; } }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .result-card-header {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .result-card-header .tag {
+      font-size: 0.7rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.15rem 0.5rem;
+      color: var(--accent2);
+    }
+    .img-frame {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        repeating-conic-gradient(var(--surface2) 0% 25%, transparent 0% 50%)
+        0 0 / 20px 20px;
+      position: relative;
+    }
+    .img-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .placeholder-text {
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    /* ── Loader ──────────────────────────────── */
+    .spinner {
+      width: 48px; height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ───────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem; right: 1.5rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+      max-width: 340px;
+      transform: translateY(120%);
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+    #toast.show    { transform: translateY(0); }
+    #toast.error   { border-left-color: var(--danger); }
+    #toast.success { border-left-color: var(--success); }
+
+    /* ── Download bar ────────────────────────── */
+    #download-bar {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      align-items: center;
+      gap: 1rem;
+    }
+    #download-bar.show { display: flex; }
+    #download-bar p { font-size: 0.9rem; color: var(--muted); flex: 1; }
+
+    /* ── Footer ──────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────── -->
+<header>
+  <div class="logo-icon">🎯</div>
+  <h1>Vision<span>Extract</span></h1>
+  <div class="badge">
+    <span id="status-dot"></span>
+    <span id="status-text">Checking API...</span>
+  </div>
+</header>
+
+<!-- ── Main ───────────────────────────────── -->
+<main>
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp,image/bmp"/>
+    <div class="upload-icon">🖼️</div>
+    <h2>Drop your image here, or click to browse</h2>
+    <p>JPEG, PNG, WebP, BMP · Max 10 MB</p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label>Mask Threshold</label>
+      <div class="slider-row">
+        <input type="range" id="threshold" min="0.1" max="0.9" step="0.05" value="0.5"/>
+        <span class="slider-val" id="threshold-val">0.50</span>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" id="reset-btn" disabled>↺ Reset</button>
+    <button class="btn btn-primary"   id="predict-btn" disabled>
+      ✨ Isolate Subject
+    </button>
+  </div>
+
+  <!-- Results -->
+  <div class="results">
+    <div class="result-card">
+      <div class="result-card-header">
+        Original
+        <span class="tag" id="orig-info">—</span>
+      </div>
+      <div class="img-frame" id="orig-frame">
+        <p class="placeholder-text">Upload an image to get started</p>
+      </div>
+    </div>
+
+    <div class="result-card">
+      <div class="result-card-header">
+        Isolated Subject
+        <span class="tag" id="result-info">—</span>
+      </div>
+      <div class="img-frame" id="result-frame">
+        <p class="placeholder-text">Result will appear here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Download bar -->
+  <div id="download-bar">
+    <p>✅ Subject isolated successfully!</p>
+    <a id="download-link" download="isolated_subject.png">
+      <button class="btn btn-primary">⬇ Download PNG</button>
+    </a>
+  </div>
+
+</main>
+
+<footer>VisionExtract · ResNet34-UNet · COCO 2017 · PyTorch</footer>
+
+<!-- ── Toast ──────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+  // ─────────────────────────────────────────
+  // Config
+  // ─────────────────────────────────────────
+  const API_BASE = 'http://localhost:8000';
+
+  // ─────────────────────────────────────────
+  // DOM refs
+  // ─────────────────────────────────────────
+  const fileInput    = document.getElementById('file-input');
+  const uploadZone   = document.getElementById('upload-zone');
+  const predictBtn   = document.getElementById('predict-btn');
+  const resetBtn     = document.getElementById('reset-btn');
+  const thresholdEl  = document.getElementById('threshold');
+  const thresholdVal = document.getElementById('threshold-val');
+  const origFrame    = document.getElementById('orig-frame');
+  const resultFrame  = document.getElementById('result-frame');
+  const origInfo     = document.getElementById('orig-info');
+  const resultInfo   = document.getElementById('result-info');
+  const downloadBar  = document.getElementById('download-bar');
+  const downloadLink = document.getElementById('download-link');
+  const statusDot    = document.getElementById('status-dot');
+  const statusText   = document.getElementById('status-text');
+  const toast        = document.getElementById('toast');
+
+  let currentFile = null;
+
+  // ─────────────────────────────────────────
+  // API Health Check
+  // ─────────────────────────────────────────
+  async function checkHealth() {
+    try {
+      const res  = await fetch(`${API_BASE}/health`);
+      const data = await res.json();
+      if (data.model_loaded) {
+        statusDot.className  = 'online';
+        statusText.textContent = 'API Online';
+      } else {
+        statusDot.className  = 'offline';
+        statusText.textContent = 'Model Not Loaded';
+      }
+    } catch {
+      statusDot.className  = 'offline';
+      statusText.textContent = 'API Offline';
+    }
+  }
+  checkHealth();
+  setInterval(checkHealth, 30000);
+
+  // ─────────────────────────────────────────
+  // Toast notifications
+  // ─────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = 'info') {
+    toast.textContent = msg;
+    toast.className   = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.className = ''; }, 3500);
+  }
+
+  // ─────────────────────────────────────────
+  // Threshold slider
+  // ─────────────────────────────────────────
+  thresholdEl.addEventListener('input', () => {
+    thresholdVal.textContent = parseFloat(thresholdEl.value).toFixed(2);
+  });
+
+  // ─────────────────────────────────────────
+  // File selection
+  // ─────────────────────────────────────────
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      showToast('Please select a valid image file.', 'error');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('File too large. Max 10MB.', 'error');
+      return;
+    }
+
+    currentFile = file;
+    const url   = URL.createObjectURL(file);
+    const dim   = `${(file.size / 1024).toFixed(0)} KB`;
+
+    origFrame.innerHTML = `<img src="${url}" alt="Original"/>`;
+    origInfo.textContent = dim;
+
+    resultFrame.innerHTML = `<p class="placeholder-text">Click "Isolate Subject" to process</p>`;
+    resultInfo.textContent = '—';
+    downloadBar.classList.remove('show');
+
+    predictBtn.disabled = false;
+    resetBtn.disabled   = false;
+  }
+
+  fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+  // Drag and drop
+  uploadZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    uploadZone.classList.add('dragover');
+  });
+  uploadZone.addEventListener('dragleave', () => {
+    uploadZone.classList.remove('dragover');
+  });
+  uploadZone.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadZone.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+  });
+
+  // ─────────────────────────────────────────
+  // Predict
+  // ─────────────────────────────────────────
+  predictBtn.addEventListener('click', async () => {
+    if (!currentFile) return;
+
+    // Show spinner
+    resultFrame.innerHTML = `<div class="spinner"></div>`;
+    resultInfo.textContent = 'Processing...';
+    predictBtn.disabled = true;
+    downloadBar.classList.remove('show');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      formData.append('threshold', thresholdEl.value);
+
+      const startTime = Date.now();
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: 'POST',
+        body:   formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || 'Server error');
+      }
+
+      const blob   = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+
+      resultFrame.innerHTML = `<img src="${objUrl}" alt="Isolated"/>`;
+      resultInfo.textContent = `${elapsed}s`;
+
+      downloadLink.href = objUrl;
+      downloadBar.classList.add('show');
+      showToast(`Subject isolated in ${elapsed}s ✓`, 'success');
+
+    } catch (err) {
+      resultFrame.innerHTML = `<p class="placeholder-text" style="color:var(--danger)">Error: ${err.message}</p>`;
+      showToast(`Error: ${err.message}`, 'error');
+      console.error(err);
+    } finally {
+      predictBtn.disabled = false;
+    }
+  });
+
+  // ─────────────────────────────────────────
+  // Reset
+  // ─────────────────────────────────────────
+  resetBtn.addEventListener('click', () => {
+    currentFile = null;
+    fileInput.value = '';
+    origFrame.innerHTML  = `<p class="placeholder-text">Upload an image to get started</p>`;
+    resultFrame.innerHTML = `<p class="placeholder-text">Result will appear here</p>`;
+    origInfo.textContent  = '—';
+    resultInfo.textContent = '—';
+    downloadBar.classList.remove('show');
+    predictBtn.disabled = true;
+    resetBtn.disabled   = true;
+    thresholdEl.value   = 0.5;
+    thresholdVal.textContent = '0.50';
+  });
+</script>
+</body>
+</html>
