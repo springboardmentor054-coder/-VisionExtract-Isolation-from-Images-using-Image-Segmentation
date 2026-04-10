@@ -1,5 +1,3 @@
- 
-
 
 """
 VisionExtract - Training Module
